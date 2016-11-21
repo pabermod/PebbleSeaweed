@@ -11,6 +11,7 @@ typedef struct ClaySettings {
 static void default_settings();
 static void load_settings();
 static void save_settings();
+static void notify_application();
 static void inbox_received_callback(DictionaryIterator *iter, void *context);
 static void inbox_dropped_callback(AppMessageResult reason, void *context);
 static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context);

@@ -23,8 +23,10 @@ function getForecast(spotId){
   
   try {    
     settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
-    favHourStr = settings.FavouriteHour;  
-    console.log('fav hour is:' + favHourStr); 
+    if (typeof settings.FavouriteHour != 'undefined'){
+      favHourStr = settings.FavouriteHour;  
+    }
+    console.log('fav hour is: ' + favHourStr); 
   } catch (e) {  console.log('Exception Getting Settings');}
 
   var favHour = parseInt(favHourStr);
@@ -56,14 +58,13 @@ function getForecast(spotId){
         }
       }
 
-      console.log('period is:' + period);
-      console.log('height is' + height);
+      console.log('period is: ' + period);
+      console.log('height is: ' + height);
 
       // Assemble keys dictionary
       var dictionary = {
         'Period': period,
-        'Height': height,
-        'FavouriteHour': favHourStr
+        'Height': height.toString(),
       };
 
       // Send to Pebble
@@ -98,9 +99,7 @@ function getWeather () {
 Pebble.addEventListener('ready',
   function (e) {
     console.log('PebbleKit JS ready!');
-
-    // Get the initial weather
-    //getWeather();
+    // Get the initial forecast
     getForecast(177);
   });
 
@@ -108,7 +107,6 @@ Pebble.addEventListener('ready',
 Pebble.addEventListener('appmessage',
   function (e) {
     console.log('AppMessage received!');
-    //getWeather();
     getForecast(177);
   }
 );
