@@ -3,13 +3,20 @@
 
 static Window *s_main_window;
 static TextLayer *s_time_layer;
-static TextLayer *s_weather_layer;
-
-static BitmapLayer *s_background_layer;
-static GBitmap *s_background_bitmap;
+static TextLayer *s_swell_first_layer;
+static TextLayer *s_swell_second_layer;
 
 static GFont s_time_font;
 static GFont s_weather_font;
+
+static GBitmap *s_star_empty_bitmap;
+static GBitmap *s_star_full_bitmap;
+
+static Layer *s_forecast_first_canvas;
+static Layer *s_forecast_second_canvas;
+static Layer *s_horizontal_ruler_layer;
+
+static const int16_t MARGIN = 5;
 
 // An instance of the struct
 static ClaySettings settings;
@@ -80,7 +87,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 		    // Assemble full string and display
 		    snprintf(forecast_layer_buffer, sizeof(forecast_layer_buffer), "%s, %s", 
 		    	height_buffer, period_buffer);
-			text_layer_set_text(s_weather_layer, forecast_layer_buffer);
+			text_layer_set_text(s_swell_first_layer, forecast_layer_buffer);
+			text_layer_set_text(s_swell_second_layer, forecast_layer_buffer);
 		}
 	} 	
 }
@@ -120,72 +128,115 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 	}
 }
 
+static void horizontal_ruler_update_proc(Layer *layer, GContext *ctx) {
+  const GRect bounds = layer_get_bounds(layer);
+
+  // y relative to layer's bounds to support clipping after some vertical scrolling
+  const int16_t yy = bounds.size.h / 2;
+
+  graphics_context_set_stroke_color(ctx, GColorWhite);
+  graphics_draw_line(ctx, GPoint(0, yy), GPoint(bounds.size.w, yy));
+}
+
+static void forecast_first_update_proc(Layer* layer, GContext* ctx){
+  // First of all set black background
+  graphics_context_set_fill_color(ctx, GColorBlack); 
+  graphics_context_set_stroke_color(ctx, GColorBlack);
+
+  int i;
+  int width = 20;
+
+  for (i = 0; i < 3; ++i)
+  {
+    graphics_draw_bitmap_in_rect(ctx, s_star_full_bitmap, GRect(width * i, 0, width, width - 1));
+  }
+
+  for (i = 3; i < 5; ++i)
+  {
+    graphics_draw_bitmap_in_rect(ctx, s_star_empty_bitmap, GRect(width * i, 0, width, width - 1));  
+  }
+}
+
 static void main_window_load(Window *window) {
 	// Get information about the Window
 	Layer *window_layer = window_get_root_layer(window);
 	GRect bounds = layer_get_bounds(window_layer);
 
-	// Create GBitmap
-	s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
-
-	// Create BitmapLayer to display the GBitmap
-	s_background_layer = bitmap_layer_create(bounds);
-
-	// Set the bitmap onto the layer and add to the window
-	bitmap_layer_set_bitmap(s_background_layer, s_background_bitmap);
-	layer_add_child(window_layer, bitmap_layer_get_layer(s_background_layer));
-
 	// Create the TextLayer with specific bounds
 	s_time_layer = text_layer_create(
-	  GRect(0, PBL_IF_ROUND_ELSE(58, 52), bounds.size.w, 50));
+	  GRect(MARGIN, -6, bounds.size.w - 2 * MARGIN, 42));
 
 	// Improve the layout to be more like a watchface
 	text_layer_set_background_color(s_time_layer, GColorClear);
-	text_layer_set_text_color(s_time_layer, GColorBlack);
+	text_layer_set_text_color(s_time_layer, GColorWhite);
 	text_layer_set_text(s_time_layer, "00:00");
-	text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
+	text_layer_set_text_alignment(s_time_layer, GTextAlignmentLeft);
 
 	// Create GFont
-	s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_PERFECT_DOS_48));
-
+	s_time_font = fonts_get_system_font(FONT_KEY_BITHAM_42_MEDIUM_NUMBERS);
+	
 	// Apply to TextLayer
 	text_layer_set_font(s_time_layer, s_time_font);
 
 	// Add it as a child layer to the Window's root layer
 	layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
 
-	// Create temperature Layer
-	s_weather_layer = text_layer_create(
-	  GRect(0, PBL_IF_ROUND_ELSE(125, 120), bounds.size.w, 25));
+	// Create first Horizontal ruler
+	s_horizontal_ruler_layer = layer_create(GRect(MARGIN, 36, bounds.size.w - 2 * MARGIN, 10));;
+	layer_set_update_proc(s_horizontal_ruler_layer, horizontal_ruler_update_proc);
+  	layer_add_child(window_layer, s_horizontal_ruler_layer);
+
+  	//Create first forecast canvas
+  	s_forecast_first_canvas = layer_create(GRect(MARGIN, 44, bounds.size.w - 2 * MARGIN, 20));
+  	layer_add_child(window_layer, s_forecast_first_canvas);
+  	layer_set_update_proc(s_forecast_first_canvas, forecast_first_update_proc);
+
+	s_swell_first_layer = text_layer_create(
+	  GRect(MARGIN, 64, bounds.size.w - 2 * MARGIN, 20));
 
 	// Style the text
-	text_layer_set_background_color(s_weather_layer, GColorClear);
-	text_layer_set_text_color(s_weather_layer, GColorWhite);
-	text_layer_set_text_alignment(s_weather_layer, GTextAlignmentCenter);
-	text_layer_set_text(s_weather_layer, "Loading...");
+	text_layer_set_background_color(s_swell_first_layer, GColorClear);
+	text_layer_set_text_color(s_swell_first_layer, GColorWhite);
+	text_layer_set_text_alignment(s_swell_first_layer, GTextAlignmentLeft);
+	text_layer_set_text(s_swell_first_layer, "Loading...");
 
-	// Create second custom font, apply it and add to Window
+	// Create second swell Layer
+	s_swell_second_layer = text_layer_create(
+	  GRect(MARGIN, 86, bounds.size.w - 2 * MARGIN, 20));
+
+	text_layer_set_background_color(s_swell_second_layer, GColorClear);
+	text_layer_set_text_color(s_swell_second_layer, GColorWhite);
+	text_layer_set_text_alignment(s_swell_second_layer, GTextAlignmentLeft);
+	text_layer_set_text(s_swell_second_layer, "Loading...");
+
+	// Create second custom font, apply it and add textlayers to Window
 	s_weather_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_PERFECT_DOS_20));
-	text_layer_set_font(s_weather_layer, s_weather_font);
-	layer_add_child(window_get_root_layer(window), text_layer_get_layer(s_weather_layer));
+	text_layer_set_font(s_swell_first_layer, s_weather_font);
+	text_layer_set_font(s_swell_second_layer, s_weather_font);
+	layer_add_child(window_layer, text_layer_get_layer(s_swell_first_layer));
+	layer_add_child(window_layer, text_layer_get_layer(s_swell_second_layer));
 }
 
 static void main_window_unload(Window *window) {
-	// Destroy TextLayer
+	// Destroy TextLayers
 	text_layer_destroy(s_time_layer);
+	text_layer_destroy(s_swell_first_layer);
+	text_layer_destroy(s_swell_second_layer);
 
-	// Unload GFont
+	// Unload Fonts
 	fonts_unload_custom_font(s_time_font);
-
-	// Destroy GBitmap
-	gbitmap_destroy(s_background_bitmap);
-
-	// Destroy BitmapLayer
-	bitmap_layer_destroy(s_background_layer);
-
-	// Destroy weather elements
-	text_layer_destroy(s_weather_layer);
 	fonts_unload_custom_font(s_weather_font);
+
+	// Destroy rulers
+ 	layer_destroy(s_horizontal_ruler_layer);
+
+ 	// Destroy stars
+	gbitmap_destroy(s_star_empty_bitmap);
+  	gbitmap_destroy(s_star_full_bitmap);
+
+  	// Destroy forecast layers
+ 	layer_destroy(s_forecast_first_canvas);
+ 	layer_destroy(s_forecast_second_canvas);
 }
 
 static void init() {
@@ -202,6 +253,10 @@ static void init() {
 	.load = main_window_load,
 	.unload = main_window_unload
 	});
+
+	// Create Stars GBitmaps
+  	s_star_empty_bitmap = gbitmap_create_with_resource(RESOURCE_ID_STAR_EMPTY_WHITE_20);
+  	s_star_full_bitmap = gbitmap_create_with_resource(RESOURCE_ID_STAR_FULL_WHITE_20);
 
 	// Show the Window on the watch, with animated=true
 	window_stack_push(s_main_window, true);
