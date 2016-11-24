@@ -4,7 +4,7 @@
 static Window *s_main_window;
 static TextLayer *s_time_layer;
 static TextLayer *s_swell_first_layer;
-static TextLayer *s_swell_second_layer;
+static TextLayer *s_wind_first_layer;
 
 static GFont s_time_font;
 static GFont s_weather_font;
@@ -14,7 +14,8 @@ static GBitmap *s_star_full_bitmap;
 
 static Layer *s_forecast_first_canvas;
 static Layer *s_forecast_second_canvas;
-static Layer *s_horizontal_ruler_layer;
+static Layer *s_ruler_first_layer;
+static Layer *s_ruler_second_layer;
 
 static const int16_t MARGIN = 5;
 
@@ -88,7 +89,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 		    snprintf(forecast_layer_buffer, sizeof(forecast_layer_buffer), "%s, %s", 
 		    	height_buffer, period_buffer);
 			text_layer_set_text(s_swell_first_layer, forecast_layer_buffer);
-			text_layer_set_text(s_swell_second_layer, forecast_layer_buffer);
+			text_layer_set_text(s_wind_first_layer, forecast_layer_buffer);
 		}
 	} 	
 }
@@ -182,15 +183,16 @@ static void main_window_load(Window *window) {
 	layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
 
 	// Create first Horizontal ruler
-	s_horizontal_ruler_layer = layer_create(GRect(MARGIN, 36, bounds.size.w - 2 * MARGIN, 10));;
-	layer_set_update_proc(s_horizontal_ruler_layer, horizontal_ruler_update_proc);
-  	layer_add_child(window_layer, s_horizontal_ruler_layer);
+	s_ruler_first_layer = layer_create(GRect(MARGIN, 36, bounds.size.w - 2 * MARGIN, 10));;
+	layer_set_update_proc(s_ruler_first_layer, horizontal_ruler_update_proc);
+  	layer_add_child(window_layer, s_ruler_first_layer);
 
   	//Create first forecast canvas
   	s_forecast_first_canvas = layer_create(GRect(MARGIN, 44, bounds.size.w - 2 * MARGIN, 20));
   	layer_add_child(window_layer, s_forecast_first_canvas);
   	layer_set_update_proc(s_forecast_first_canvas, forecast_first_update_proc);
 
+  	// First swell layer
 	s_swell_first_layer = text_layer_create(
 	  GRect(MARGIN, 64, bounds.size.w - 2 * MARGIN, 20));
 
@@ -200,35 +202,40 @@ static void main_window_load(Window *window) {
 	text_layer_set_text_alignment(s_swell_first_layer, GTextAlignmentLeft);
 	text_layer_set_text(s_swell_first_layer, "Loading...");
 
-	// Create second swell Layer
-	s_swell_second_layer = text_layer_create(
+	// First wind layer
+	s_wind_first_layer = text_layer_create(
 	  GRect(MARGIN, 86, bounds.size.w - 2 * MARGIN, 20));
 
-	text_layer_set_background_color(s_swell_second_layer, GColorClear);
-	text_layer_set_text_color(s_swell_second_layer, GColorWhite);
-	text_layer_set_text_alignment(s_swell_second_layer, GTextAlignmentLeft);
-	text_layer_set_text(s_swell_second_layer, "Loading...");
+	text_layer_set_background_color(s_wind_first_layer, GColorClear);
+	text_layer_set_text_color(s_wind_first_layer, GColorWhite);
+	text_layer_set_text_alignment(s_wind_first_layer, GTextAlignmentLeft);
+	text_layer_set_text(s_wind_first_layer, "Loading...");
 
 	// Create second custom font, apply it and add textlayers to Window
 	s_weather_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_PERFECT_DOS_20));
 	text_layer_set_font(s_swell_first_layer, s_weather_font);
-	text_layer_set_font(s_swell_second_layer, s_weather_font);
+	text_layer_set_font(s_wind_first_layer, s_weather_font);
 	layer_add_child(window_layer, text_layer_get_layer(s_swell_first_layer));
-	layer_add_child(window_layer, text_layer_get_layer(s_swell_second_layer));
+	layer_add_child(window_layer, text_layer_get_layer(s_wind_first_layer));
+
+	// Create second Horizontal ruler
+	s_ruler_second_layer = layer_create(GRect(MARGIN, 97, bounds.size.w - 2 * MARGIN, 10));;
+	layer_set_update_proc(s_ruler_first_layer, horizontal_ruler_update_proc);
+  	layer_add_child(window_layer, s_ruler_first_layer);
 }
 
 static void main_window_unload(Window *window) {
 	// Destroy TextLayers
 	text_layer_destroy(s_time_layer);
 	text_layer_destroy(s_swell_first_layer);
-	text_layer_destroy(s_swell_second_layer);
+	text_layer_destroy(s_wind_first_layer);
 
 	// Unload Fonts
-	fonts_unload_custom_font(s_time_font);
 	fonts_unload_custom_font(s_weather_font);
 
 	// Destroy rulers
- 	layer_destroy(s_horizontal_ruler_layer);
+ 	layer_destroy(s_ruler_first_layer);
+ 	layer_destroy(s_ruler_second_layer);
 
  	// Destroy stars
 	gbitmap_destroy(s_star_empty_bitmap);
