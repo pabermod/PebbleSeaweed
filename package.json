@@ -1,96 +1,85 @@
 {
-    "author": "Pablo Bernal",
-    "dependencies": {
-        "pebble-battery-bar": "^1.0.9",
-        "pebble-bluetooth-icon": "^1.0.7",
-        "pebble-clay": "^1.0.3",
-        "pebble-localize": "^0.1.2"
-    },
-    "keywords": [],
-    "name": "pebbleseaweed",
-    "pebble": {
-        "capabilities": [
-            "configurable",
-            "location"
-        ],
-        "displayName": "PebbleSeaWeed",
-        "enableMultiJS": true,
-        "messageKeys": [
-            "Period",
-            "Height",
-            "FavouriteHour"
-        ],
-        "projectType": "native",
-        "resources": {
-            "media": [
-                {
-                    "file": "fonts/perfect-dos-vga.ttf",
-                    "name": "FONT_PERFECT_DOS_20",
-                    "targetPlatforms": null,
-                    "type": "font"
-                },
-                {
-                    "file": "images/bt-icon.png",
-                    "name": "IMAGE_BT_ICON",
-                    "targetPlatforms": null,
-                    "type": "bitmap",
-                    "memoryFormat": "Smallest",
-                    "spaceOptimization": "memory"
-                },
-                {
-                    "file": "fonts/perfect-dos-vga",
-                    "name": "FONT_PERFECT_DOS_48",
-                    "targetPlatforms": null,
-                    "type": "font"
-                },
-                {
-                    "type": "bitmap",
-                    "name": "STAR_FULL_BLACK_20",
-                    "file": "images/star_full_black_20.png",
-                    "memoryFormat": "Smallest",
-                    "spaceOptimization": "memory"
-                },
-                {                  
-                    "type": "bitmap",
-                    "name": "STAR_EMPTY_BLACK_20",
-                    "file": "images/star_empty_black_20.png",
-                    "memoryFormat": "Smallest",
-                    "spaceOptimization": "memory"
-                },
-                {
-                    "type": "bitmap",
-                    "name": "STAR_FULL_WHITE_20",
-                    "file": "images/star_full_white_20.png",
-                    "memoryFormat": "Smallest",
-                    "spaceOptimization": "memory"
-                },
-                {                  
-                    "type": "bitmap",
-                    "name": "STAR_EMPTY_WHITE_20",
-                    "file": "images/star_empty_white_20.png",
-                    "memoryFormat": "Smallest",
-                    "spaceOptimization": "memory"
-                },
-                {
-                    "type": "bitmap",
-                    "name": "WAVE_BLACK_20",
-                    "file": "images/wave_20_black.png",
-                    "memoryFormat": "Smallest",
-                    "spaceOptimization": "memory"
-                }
-            ]
+  "author": "Pablo Bernal",
+  "dependencies": {
+    "@smallstoneapps/data-processor": "^2.1.1",
+    "pebble-battery-bar": "^1.0.9",
+    "pebble-bluetooth-icon": "^1.0.7",
+    "pebble-clay": "^1.0.3",
+    "pebble-localize": "^0.1.2"
+  },
+  "keywords": [],
+  "name": "pebbleseaweed",
+  "pebble": {
+    "capabilities": [
+      "configurable",
+      "location"
+    ],
+    "displayName": "PebbleSeaWeed",
+    "enableMultiJS": true,
+    "messageKeys": [
+      "Period[2]",
+      "Height",
+      "FavouriteHour"
+    ],
+    "projectType": "native",
+    "resources": {
+      "media": [
+        {
+          "file": "images/bt-icon.png",
+          "name": "IMAGE_BT_ICON",
+          "targetPlatforms": null,
+          "type": "bitmap",
+          "memoryFormat": "Smallest",
+          "spaceOptimization": "memory"
         },
-        "sdkVersion": "3",
-        "targetPlatforms": [
-            "aplite",
-            "basalt",
-            "chalk",
-            "diorite"
-        ],
-        "uuid": "0832375d-ec7c-4b60-b29d-3c0559aef10e",
-        "watchapp": {
-            "watchface": true
+        {
+          "type": "bitmap",
+          "name": "STAR_FULL_BLACK_20",
+          "file": "images/star_full_black_20.png",
+          "memoryFormat": "Smallest",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "STAR_EMPTY_BLACK_20",
+          "file": "images/star_empty_black_20.png",
+          "memoryFormat": "Smallest",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "STAR_FULL_WHITE_20",
+          "file": "images/star_full_white_20.png",
+          "memoryFormat": "Smallest",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "STAR_EMPTY_WHITE_20",
+          "file": "images/star_empty_white_20.png",
+          "memoryFormat": "Smallest",
+          "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "WAVE_BLACK_20",
+          "file": "images/wave_20_black.png",
+          "memoryFormat": "Smallest",
+          "spaceOptimization": "memory"
         }
+      ]
     },
-    "version": "1.0.0"
+    "sdkVersion": "3",
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite"
+    ],
+    "uuid": "0832375d-ec7c-4b60-b29d-3c0559aef10e",
+    "watchapp": {
+      "watchface": true
+    }
+  },
+  "version": "1.0.0"
 }

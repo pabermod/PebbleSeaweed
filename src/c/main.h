@@ -1,5 +1,6 @@
 #pragma once
 #include <pebble.h>
+#include <@smallstoneapps/data-processor/data-processor.h>
 
 #define SETTINGS_KEY 1
 
@@ -16,7 +17,12 @@ static void inbox_received_callback(DictionaryIterator *iter, void *context);
 static void inbox_dropped_callback(AppMessageResult reason, void *context);
 static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context);
 static void outbox_sent_callback(DictionaryIterator *iterator, void *context);
+static void update_time();
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
+static void horizontal_ruler_update_proc(Layer *layer, GContext *ctx);
+static void forecast_first_update_proc(Layer* layer, GContext* ctx);
+static void layer_add_first_forecast(Layer *window_layer, GRect bounds);
+static void layer_add_second_forecast(Layer *window_layer, GRect bounds);
 static void main_window_load(Window *window);
 static void main_window_unload(Window *window);
 static void init(void);

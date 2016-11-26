@@ -1,4 +1,3 @@
-#include <pebble.h>
 #include "main.h"
 
 static Window *s_main_window;
@@ -56,18 +55,25 @@ static void notify_application(){
 	app_message_outbox_send();
 }
 
-static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
-	// Store incoming information
-	static char period_buffer[8];
-	static char height_buffer[8];
-	static char forecast_layer_buffer[32];
-	static char favhour_buffer[4];
+static char** parse_data(char* data) {
+  ProcessingState* state = data_processor_create(data, '|');
+  uint8_t num_strings = data_processor_count(state);
+  char** strings = malloc(sizeof(char*) * num_strings);
+  for (uint8_t n = 0; n < num_strings; n += 1) {
+    strings[n] = data_processor_get_string(state);
+  }
+  return strings;
+}
 
+static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
 	// Read fav hour tuple
 	Tuple *fav_hour_tuple = dict_find(iterator, MESSAGE_KEY_FavouriteHour);
 
 	if(fav_hour_tuple){
 		// Favourite hour changed
+
+		static char favhour_buffer[4];
+
 		snprintf(favhour_buffer, sizeof(favhour_buffer), "%s", fav_hour_tuple->value->cstring);
 		int new_favhour = atoi(favhour_buffer);
 		if (new_favhour != settings.FavouriteHour)
@@ -83,19 +89,40 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 		Tuple *heights_tuple = dict_find(iterator, MESSAGE_KEY_Height);
 		// If all data is available, use it 
 		if(period_tuple && heights_tuple) {
-		    snprintf(period_buffer, sizeof(period_buffer), "%ds", (int)period_tuple->value->int32);
-		    snprintf(height_buffer, sizeof(height_buffer), "%sm", heights_tuple->value->cstring);
+			static char swell_period_buffer_first[8];
+			static char swell_period_buffer_second[8];
 
-		    APP_LOG(APP_LOG_LEVEL_INFO, "period_buffer is %s", period_buffer);
-		    APP_LOG(APP_LOG_LEVEL_INFO, "height_buffer is %s", height_buffer);
+			// Write period data to buffer
+		    snprintf(swell_period_buffer_first, sizeof(swell_period_buffer_first), 
+				"%ds", (int)period_tuple->value->int32);
+			snprintf(swell_period_buffer_second, sizeof(swell_period_buffer_second), 
+				"%ds", (int)period_tuple->value->int32+1);
+			
+			static char swell_height_buffer_first[8];
+			static char swell_height_buffer_second[8];
 
-		    // Assemble full string and display
-		    snprintf(forecast_layer_buffer, sizeof(forecast_layer_buffer), "%s, %s", 
-		    	height_buffer, period_buffer);
-			text_layer_set_text(s_swell_first_layer, forecast_layer_buffer);
-			text_layer_set_text(s_wind_first_layer, forecast_layer_buffer);
-			text_layer_set_text(s_swell_second_layer, forecast_layer_buffer);
-			text_layer_set_text(s_wind_second_layer, forecast_layer_buffer);
+			// Get height data
+			char** strings = parse_data(heights_tuple->value->cstring);
+			// Write height data to buffer
+			snprintf(swell_height_buffer_first, sizeof(swell_height_buffer_first), 
+				"%sm", strings[0]);
+			snprintf(swell_height_buffer_second, sizeof(swell_height_buffer_second), 
+				"%sm", strings[1]);
+
+			static char swell_buffer_first[16];
+			static char swell_buffer_second[16];
+
+		    // Assemble full first swell and display			
+		    snprintf(swell_buffer_first, sizeof(swell_buffer_first), "%s %s", 
+				swell_height_buffer_first, swell_period_buffer_first);
+			text_layer_set_text(s_swell_first_layer, swell_buffer_first);
+			//text_layer_set_text(s_wind_first_layer, swell_buffer_first);
+
+		    // Assemble full second swell and display	
+		    snprintf(swell_buffer_second, sizeof(swell_buffer_first), "%s %s", 
+		    	swell_height_buffer_second, swell_period_buffer_second);
+			text_layer_set_text(s_swell_second_layer, swell_buffer_second);
+			//text_layer_set_text(s_wind_second_layer, swell_buffer_first);
 		}
 	} 	
 }
@@ -195,9 +222,7 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
 	text_layer_set_text_alignment(s_wind_first_layer, GTextAlignmentLeft);
 	text_layer_set_text(s_wind_first_layer, "Loading...");
 
-	// Create second custom font, apply it and add textlayers to Window
-	//s_forecast_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_PERFECT_DOS_20));
-	s_forecast_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+	// Apply forecast font and add textlayers to window
 	text_layer_set_font(s_swell_first_layer, s_forecast_font);
 	text_layer_set_font(s_wind_first_layer, s_forecast_font);
 	layer_add_child(s_forecast_first_layer, text_layer_get_layer(s_swell_first_layer));
@@ -238,9 +263,7 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
 	text_layer_set_text_alignment(s_wind_second_layer, GTextAlignmentLeft);
 	text_layer_set_text(s_wind_second_layer, "Loading...");
 
-	// Create second custom font, apply it and add textlayers to Window
-	//s_forecast_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_PERFECT_DOS_20));
-	s_forecast_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+	// Apply forecast font and add textlayers to window
 	text_layer_set_font(s_swell_second_layer, s_forecast_font);
 	text_layer_set_font(s_wind_second_layer, s_forecast_font);
 	layer_add_child(s_forecast_second_layer, text_layer_get_layer(s_swell_second_layer));
@@ -267,6 +290,9 @@ static void main_window_load(Window *window) {
 	// Create GFont and Apply to TextLayer
 	s_time_font = fonts_get_system_font(FONT_KEY_BITHAM_42_MEDIUM_NUMBERS);	
 	text_layer_set_font(s_time_layer, s_time_font);
+
+	// Create Forecast font
+	s_forecast_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
 
 	// Add it as a child layer to the Window's root layer
 	layer_add_child(window_layer, text_layer_get_layer(s_time_layer));

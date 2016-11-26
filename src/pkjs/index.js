@@ -5,6 +5,9 @@ var clayConfig = require('./config');
 // Initialize Clay
 var clay = new Clay(clayConfig);
 
+// Require the keys' numeric values.
+var keys = require('message_keys');
+
 var xhrRequest = function (url, type, callback) {
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
@@ -43,29 +46,27 @@ function getForecast(spotId){
     function (responseText) {
       // responseText contains a JSON object with weather info
       var json = JSON.parse(responseText);
-      var num = 2;
-      var period;
-      var height;
+      var num = 0;
       
+      // Create dictionary
+      var dictionary = {};
+      dictionary[keys.Height] = '';
+      // Get only the first 2 forecasts
       for(var k in json){
-        if(num === 0) break;
         var date = new Date(json[k].localTimestamp*1000);
         if(date.getHours() == favHour){
-          period = json[k].swell.components.combined.period;
-          height = json[k].swell.components.combined.height;
-          console.log(k +' '+ json[k].localTimestamp+' '+ date.toString());
-          num--;
+          dictionary[keys.Period+num] = json[k].swell.components.combined.period;
+          dictionary[keys.Height] += json[k].swell.components.combined.height.toString();
+          num++;
+          if(num === 2) {
+            break;
+          }
+          dictionary[keys.Height] += '|';
         }
       }
 
-      console.log('period is: ' + period);
-      console.log('height is: ' + height);
-
-      // Assemble keys dictionary
-      var dictionary = {
-        'Period': period,
-        'Height': height.toString(),
-      };
+      console.log('period is: ' + dictionary[keys.Period] + ' ' + dictionary[keys.Period+1]);
+      console.log('height is: ' + dictionary[keys.Height]);
 
       // Send to Pebble
       Pebble.sendAppMessage(dictionary,
