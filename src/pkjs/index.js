@@ -44,29 +44,36 @@ function getForecast(spotId){
   // Send request to MagicSeaWeed
   xhrRequest(url, 'GET',
     function (responseText) {
-      // responseText contains a JSON object with weather info
+      // responseText contains a JSON object with forecast info
       var json = JSON.parse(responseText);
       var num = 0;
       
       // Create dictionary
       var dictionary = {};
-      dictionary[keys.Height] = '';
+      dictionary[keys.SwellHeight] = '';
       // Get only the first 2 forecasts
       for(var k in json){
         var date = new Date(json[k].localTimestamp*1000);
         if(date.getHours() == favHour){
-          dictionary[keys.Period+num] = json[k].swell.components.combined.period;
-          dictionary[keys.Height] += json[k].swell.components.combined.height.toString();
+          // Swell Keys
+          dictionary[keys.FadedRating + num] = json[k].fadedRating;
+          dictionary[keys.SolidRating + num] = json[k].solidRating;
+          dictionary[keys.SwellPeriod + num] = 
+            json[k].swell.components.combined.period;
+          dictionary[keys.SwellHeight] += 
+            json[k].swell.components.combined.height.toString();
+          dictionary[keys.SwellDirection + num] = 
+            Math.round(json[k].swell.components.combined.direction);
+          // Wind Keys
+          dictionary[keys.WindSpeed + num] = json[k].wind.speed;
+          dictionary[keys.WindDirection + num] = json[k].wind.direction;
           num++;
           if(num === 2) {
             break;
           }
-          dictionary[keys.Height] += '|';
+          dictionary[keys.SwellHeight] += '|';
         }
       }
-
-      console.log('period is: ' + dictionary[keys.Period] + ' ' + dictionary[keys.Period+1]);
-      console.log('height is: ' + dictionary[keys.Height]);
 
       // Send to Pebble
       Pebble.sendAppMessage(dictionary,

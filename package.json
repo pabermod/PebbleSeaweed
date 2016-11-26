@@ -17,9 +17,14 @@
     "displayName": "PebbleSeaWeed",
     "enableMultiJS": true,
     "messageKeys": [
-      "Period[2]",
-      "Height",
-      "FavouriteHour"
+      "FavouriteHour",
+      "FadedRating[2]",
+      "SolidRating[2]",
+      "SwellPeriod[2]",
+      "SwellHeight",
+      "SwellDirection[2]",
+      "WindSpeed[2]",
+      "WindDirection[2]"
     ],
     "projectType": "native",
     "resources": {

@@ -73,8 +73,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 		// Favourite hour changed
 
 		static char favhour_buffer[4];
+		snprintf(favhour_buffer, sizeof(favhour_buffer), 
+			"%s", fav_hour_tuple->value->cstring);
 
-		snprintf(favhour_buffer, sizeof(favhour_buffer), "%s", fav_hour_tuple->value->cstring);
 		int new_favhour = atoi(favhour_buffer);
 		if (new_favhour != settings.FavouriteHour)
 		{
@@ -85,8 +86,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 		}
 	} 
 	else {
-		Tuple *period_tuple = dict_find(iterator, MESSAGE_KEY_Period);
-		Tuple *heights_tuple = dict_find(iterator, MESSAGE_KEY_Height);
+		Tuple *period_tuple = dict_find(iterator, MESSAGE_KEY_SwellPeriod);
+		Tuple *heights_tuple = dict_find(iterator, MESSAGE_KEY_SwellHeight);
 		// If all data is available, use it 
 		if(period_tuple && heights_tuple) {
 			static char swell_period_buffer_first[8];
@@ -128,7 +129,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 }
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
-	APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
+	APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped. Reason: %d", (int)reason);
 }
 
 static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
@@ -212,7 +213,7 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
 	text_layer_set_background_color(s_swell_first_layer, GColorClear);
 	text_layer_set_text_color(s_swell_first_layer, GColorWhite);
 	text_layer_set_text_alignment(s_swell_first_layer, GTextAlignmentLeft);
-	text_layer_set_text(s_swell_first_layer, "Loading...");
+	text_layer_set_text(s_swell_first_layer, "...");
 
 	// First wind layer
 	s_wind_first_layer = text_layer_create(GRect(0, 42, bounds.size.w, 21));
@@ -220,7 +221,7 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
 	text_layer_set_background_color(s_wind_first_layer, GColorClear);
 	text_layer_set_text_color(s_wind_first_layer, GColorWhite);
 	text_layer_set_text_alignment(s_wind_first_layer, GTextAlignmentLeft);
-	text_layer_set_text(s_wind_first_layer, "Loading...");
+	text_layer_set_text(s_wind_first_layer, "...");
 
 	// Apply forecast font and add textlayers to window
 	text_layer_set_font(s_swell_first_layer, s_forecast_font);
@@ -253,7 +254,7 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
 	text_layer_set_background_color(s_swell_second_layer, GColorClear);
 	text_layer_set_text_color(s_swell_second_layer, GColorWhite);
 	text_layer_set_text_alignment(s_swell_second_layer, GTextAlignmentLeft);
-	text_layer_set_text(s_swell_second_layer, "Loading...");
+	text_layer_set_text(s_swell_second_layer, "...");
 
 	// second wind layer
 	s_wind_second_layer = text_layer_create(GRect(0, 42, bounds.size.w, 21));
@@ -261,7 +262,7 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
 	text_layer_set_background_color(s_wind_second_layer, GColorClear);
 	text_layer_set_text_color(s_wind_second_layer, GColorWhite);
 	text_layer_set_text_alignment(s_wind_second_layer, GTextAlignmentLeft);
-	text_layer_set_text(s_wind_second_layer, "Loading...");
+	text_layer_set_text(s_wind_second_layer, "...");
 
 	// Apply forecast font and add textlayers to window
 	text_layer_set_font(s_swell_second_layer, s_forecast_font);
