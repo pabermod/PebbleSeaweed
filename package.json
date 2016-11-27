@@ -71,6 +71,13 @@
           "file": "images/wave_20_black.png",
           "memoryFormat": "Smallest",
           "spaceOptimization": "memory"
+        },
+        {
+          "type": "bitmap",
+          "name": "WAVE_WHITE_20",
+          "file": "images/wave_20_white.png",
+          "memoryFormat": "Smallest",
+          "spaceOptimization": "memory"
         }
       ]
     },

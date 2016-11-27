@@ -8,11 +8,13 @@ static GFont s_forecast_font;
 
 static GBitmap *s_star_empty_bitmap;
 static GBitmap *s_star_full_bitmap;
+static GBitmap *s_wave_bitmap;
 
 static Layer *s_forecast_first_layer;
 static Layer *s_forecast_second_layer;
 static Layer *s_rating_first_canvas;
 static Layer *s_rating_second_canvas;
+static Layer *s_wave_canvas;
 static TextLayer *s_swell_first_layer;
 static TextLayer *s_wind_first_layer;
 static TextLayer *s_swell_second_layer;
@@ -86,24 +88,24 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 		}
 	} 
 	else {
-		Tuple *period_tuple = dict_find(iterator, MESSAGE_KEY_SwellPeriod);
-		Tuple *heights_tuple = dict_find(iterator, MESSAGE_KEY_SwellHeight);
+		Tuple *swell_period_tuple = dict_find(iterator, MESSAGE_KEY_SwellPeriod);
+		Tuple *swell_heights_tuple = dict_find(iterator, MESSAGE_KEY_SwellHeight);
 		// If all data is available, use it 
-		if(period_tuple && heights_tuple) {
+		if(swell_period_tuple && swell_heights_tuple) {
 			static char swell_period_buffer_first[8];
 			static char swell_period_buffer_second[8];
 
 			// Write period data to buffer
 		    snprintf(swell_period_buffer_first, sizeof(swell_period_buffer_first), 
-				"%ds", (int)period_tuple->value->int32);
+				"%ds", (int)swell_period_tuple->value->int32);
 			snprintf(swell_period_buffer_second, sizeof(swell_period_buffer_second), 
-				"%ds", (int)period_tuple->value->int32+1);
+				"%ds", (int)swell_period_tuple->value->int32+1);
 			
 			static char swell_height_buffer_first[8];
 			static char swell_height_buffer_second[8];
 
 			// Get height data
-			char** strings = parse_data(heights_tuple->value->cstring);
+			char** strings = parse_data(swell_heights_tuple->value->cstring);
 			// Write height data to buffer
 			snprintf(swell_height_buffer_first, sizeof(swell_height_buffer_first), 
 				"%sm", strings[0]);
@@ -173,7 +175,7 @@ static void horizontal_ruler_update_proc(Layer *layer, GContext *ctx) {
   graphics_draw_line(ctx, GPoint(0, yy), GPoint(bounds.size.w, yy));
 }
 
-static void forecast_first_update_proc(Layer* layer, GContext* ctx){
+static void rating_first_update_proc(Layer* layer, GContext* ctx){
   // First of all set black background
   graphics_context_set_fill_color(ctx, GColorBlack); 
   graphics_context_set_stroke_color(ctx, GColorBlack);
@@ -192,6 +194,29 @@ static void forecast_first_update_proc(Layer* layer, GContext* ctx){
   }
 }
 
+static void rating_second_update_proc(Layer* layer, GContext* ctx){
+  // First of all set black background
+  graphics_context_set_fill_color(ctx, GColorBlack); 
+  graphics_context_set_stroke_color(ctx, GColorBlack);
+
+  int i;
+  int width = 20;
+
+  for (i = 0; i < 2; ++i)
+  {
+    graphics_draw_bitmap_in_rect(ctx, s_star_full_bitmap, GRect(width * i, 0, width, width - 1));
+  }
+
+  for (i = 2; i < 4; ++i)
+  {
+    graphics_draw_bitmap_in_rect(ctx, s_star_empty_bitmap, GRect(width * i, 0, width, width - 1));  
+  }
+}
+
+static void wave_update_proc(Layer* layer, GContext* ctx){
+  graphics_draw_bitmap_in_rect(ctx, s_wave_bitmap, GRect(0, 6, 20, 14));
+}
+
 static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
 	// First Forecast Layer
 	s_forecast_first_layer = layer_create(GRect(MARGIN, 35, bounds.size.w - 2 * MARGIN, 72));
@@ -202,12 +227,17 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
   	layer_add_child(s_forecast_first_layer, s_ruler_first_layer);
 
   	//Create first forecast canvas
-  	s_rating_first_canvas = layer_create(GRect(0, 5, bounds.size.w, 20));
+  	s_rating_first_canvas = layer_create(GRect(-1, 5, bounds.size.w, 20));
   	layer_add_child(s_forecast_first_layer, s_rating_first_canvas);
-  	layer_set_update_proc(s_rating_first_canvas, forecast_first_update_proc);
+  	layer_set_update_proc(s_rating_first_canvas, rating_first_update_proc);
+
+	// First wave canvas
+	s_wave_canvas = layer_create(GRect(-4, 24, 20, 20));
+	layer_add_child(s_forecast_first_layer, s_wave_canvas);
+	layer_set_update_proc(s_wave_canvas, wave_update_proc);
 
   	// First swell layer
-	s_swell_first_layer = text_layer_create(GRect(0, 23, bounds.size.w, 21));
+	s_swell_first_layer = text_layer_create(GRect(23, 23, bounds.size.w, 21));
 
 	// Style the text
 	text_layer_set_background_color(s_swell_first_layer, GColorClear);
@@ -243,12 +273,17 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
   	layer_add_child(s_forecast_second_layer, s_ruler_second_layer);
 
   	//Create first forecast canvas
-  	s_rating_second_canvas = layer_create(GRect(0, 5, bounds.size.w, 20));
+  	s_rating_second_canvas = layer_create(GRect(-1, 5, bounds.size.w, 20));
   	layer_add_child(s_forecast_second_layer, s_rating_second_canvas);
-  	layer_set_update_proc(s_rating_second_canvas, forecast_first_update_proc);
+  	layer_set_update_proc(s_rating_second_canvas, rating_second_update_proc);
+
+	// Second wave canvas
+	s_wave_canvas = layer_create(GRect(-4, 24, 20, 20));
+	layer_add_child(s_forecast_second_layer, s_wave_canvas);
+	layer_set_update_proc(s_wave_canvas, wave_update_proc);
 
   	// Second swell layer
-	s_swell_second_layer = text_layer_create(GRect(0, 23, bounds.size.w, 21));
+	s_swell_second_layer = text_layer_create(GRect(23, 23, bounds.size.w, 21));
 
 	// Style the text
 	text_layer_set_background_color(s_swell_second_layer, GColorClear);
@@ -318,15 +353,17 @@ static void main_window_unload(Window *window) {
  	layer_destroy(s_ruler_first_layer);
  	layer_destroy(s_ruler_second_layer);
 
- 	// Destroy stars
+ 	// Destroy bitmaps
 	gbitmap_destroy(s_star_empty_bitmap);
   	gbitmap_destroy(s_star_full_bitmap);
+	gbitmap_destroy(s_wave_bitmap);
 
   	// Destroy forecast layers
  	layer_destroy(s_rating_first_canvas);
  	layer_destroy(s_rating_second_canvas);
 	layer_destroy(s_forecast_first_layer);
 	layer_destroy(s_forecast_second_layer);
+	layer_destroy(s_wave_canvas);
 }
 
 static void init() {
@@ -344,9 +381,10 @@ static void init() {
 	.unload = main_window_unload
 	});
 
-	// Create Stars GBitmaps
+	// Create GBitmaps
   	s_star_empty_bitmap = gbitmap_create_with_resource(RESOURCE_ID_STAR_EMPTY_WHITE_20);
   	s_star_full_bitmap = gbitmap_create_with_resource(RESOURCE_ID_STAR_FULL_WHITE_20);
+	s_wave_bitmap = gbitmap_create_with_resource(RESOURCE_ID_WAVE_WHITE_20);
 
 	// Show the Window on the watch, with animated=true
 	window_stack_push(s_main_window, true);
