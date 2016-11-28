@@ -36,7 +36,8 @@ static void default_settings()
     settings[0].FadedRating = settings[1].FadedRating = 0;
     settings[0].SolidRating = settings[1].SolidRating = 0;
     settings[0].SwellPeriod = settings[1].SwellPeriod = 0;
-    settings[0].SwellHeight = settings[1].SwellHeight = "0";
+    strcpy(settings[0].SwellHeight, "Hello");
+    strcpy(settings[1].SwellHeight, "Hello");
     settings[0].SwellDirection = settings[1].SwellDirection = 0;
     settings[0].WindSpeed = settings[1].WindSpeed = 0;
     settings[0].WindDirection = settings[1].WindDirection = 0;
@@ -82,8 +83,22 @@ static char **parse_data(char *data)
     return strings;
 }
 
+void copy_string(char d[], char s[]) {
+   int c = 0;
+ 
+   while (s[c] != '\0') {
+      d[c] = s[c];
+      c++;
+   }
+   d[c] = '\0';
+}
+
 static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "adasd!");
+    APP_LOG(APP_LOG_LEVEL_ERROR, "%s", settings[0].SwellHeight);
+    APP_LOG(APP_LOG_LEVEL_ERROR, "%d", settings[0].SwellPeriod);
+
     // Read fav hour tuple
     Tuple *fav_hour_tuple = dict_find(iterator, MESSAGE_KEY_FavouriteHour);
 
@@ -143,18 +158,13 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             snprintf(swell_period_buffer_second, sizeof(swell_period_buffer_second),
                 "%ds", settings[1].SwellPeriod);
 
-			static char swell_height_buffer_first[8];
-			static char swell_height_buffer_second[8];
-
 			// Update height
 			char **strings = parse_data(swell_heights_tuple->value->cstring);
-            settings[0].SwellHeight = strings[0];
-            settings[1].SwellHeight = strings[1];
 
 			// Write height data to buffer
-			snprintf(swell_height_buffer_first, sizeof(swell_height_buffer_first),
+			snprintf(settings[0].SwellHeight, sizeof(settings[0].SwellHeight),
 				"%sm", strings[0]);
-			snprintf(swell_height_buffer_second, sizeof(swell_height_buffer_second),
+			snprintf(settings[1].SwellHeight, sizeof(settings[1].SwellHeight),
 				"%sm", strings[1]);
 
             settings[0].SwellDirection = swell_direction_one->value->int32;
@@ -165,12 +175,12 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             
             // Assemble full first swell and display
             snprintf(swell_buffer_first, sizeof(swell_buffer_first), "%s %s",
-                swell_height_buffer_first, swell_period_buffer_first);
+                settings[0].SwellHeight, swell_period_buffer_first);
             text_layer_set_text(s_swell_first_layer, swell_buffer_first);
 
 			// Assemble full second swell and display
 			snprintf(swell_buffer_second, sizeof(swell_buffer_first), "%s %s",
-				swell_height_buffer_second, swell_period_buffer_second);
+				settings[1].SwellHeight, swell_period_buffer_second);
 			text_layer_set_text(s_swell_second_layer, swell_buffer_second);
             
             // Update Wind
@@ -315,21 +325,34 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds)
     layer_set_update_proc(s_wave_canvas, wave_update_proc);
 
     // First swell layer
-    s_swell_first_layer = text_layer_create(GRect(23, 23, bounds.size.w, 21));
+    s_swell_first_layer = text_layer_create(GRect(23, 23, bounds.size.w, 21)); 
 
-    // Style the text
+    // Get Swell from settings
+    static char swell_period_buffer_first[8];
+    snprintf(swell_period_buffer_first, sizeof(swell_period_buffer_first),
+        "%ds", settings[0].SwellPeriod);
+    static char swell_buffer_first[16];
+    snprintf(swell_buffer_first, sizeof(swell_buffer_first), "%s %s",
+        settings[0].SwellHeight, swell_period_buffer_first);
+
+    // Style the text and display
     text_layer_set_background_color(s_swell_first_layer, GColorClear);
     text_layer_set_text_color(s_swell_first_layer, GColorWhite);
     text_layer_set_text_alignment(s_swell_first_layer, GTextAlignmentLeft);
-    text_layer_set_text(s_swell_first_layer, "...");
+    text_layer_set_text(s_swell_first_layer, swell_buffer_first);
 
     // First wind layer
     s_wind_first_layer = text_layer_create(GRect(0, 42, bounds.size.w, 21));
 
+    // Get wind from settings
+    static char wind_speed_buffer_first[8];
+    snprintf(wind_speed_buffer_first, sizeof(wind_speed_buffer_first),
+        "%dkmh", settings[0].WindSpeed);
+
     text_layer_set_background_color(s_wind_first_layer, GColorClear);
     text_layer_set_text_color(s_wind_first_layer, GColorWhite);
     text_layer_set_text_alignment(s_wind_first_layer, GTextAlignmentLeft);
-    text_layer_set_text(s_wind_first_layer, "...");
+    text_layer_set_text(s_wind_first_layer, wind_speed_buffer_first);
 
     // Apply forecast font and add textlayers to window
     text_layer_set_font(s_swell_first_layer, s_forecast_font);
@@ -364,19 +387,32 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds)
     // Second swell layer
     s_swell_second_layer = text_layer_create(GRect(23, 23, bounds.size.w, 21));
 
+    // Get Swell from settings
+    static char swell_period_buffer_second[8];
+    snprintf(swell_period_buffer_second, sizeof(swell_period_buffer_second),
+        "%ds", settings[1].SwellPeriod);
+    static char swell_buffer_second[16];
+    snprintf(swell_buffer_second, sizeof(swell_buffer_second), "%s %s",
+        settings[1].SwellHeight, swell_period_buffer_second);
+
     // Style the text
     text_layer_set_background_color(s_swell_second_layer, GColorClear);
     text_layer_set_text_color(s_swell_second_layer, GColorWhite);
     text_layer_set_text_alignment(s_swell_second_layer, GTextAlignmentLeft);
-    text_layer_set_text(s_swell_second_layer, "...");
+    text_layer_set_text(s_swell_second_layer, swell_buffer_second);
 
     // second wind layer
     s_wind_second_layer = text_layer_create(GRect(0, 42, bounds.size.w, 21));
 
+    // Get wind from settings
+    static char wind_speed_buffer_second[8];
+    snprintf(wind_speed_buffer_second, sizeof(wind_speed_buffer_second),
+        "%dkmh", settings[1].WindSpeed);
+
     text_layer_set_background_color(s_wind_second_layer, GColorClear);
     text_layer_set_text_color(s_wind_second_layer, GColorWhite);
     text_layer_set_text_alignment(s_wind_second_layer, GTextAlignmentLeft);
-    text_layer_set_text(s_wind_second_layer, "...");
+    text_layer_set_text(s_wind_second_layer, wind_speed_buffer_second);
 
     // Apply forecast font and add textlayers to window
     text_layer_set_font(s_swell_second_layer, s_forecast_font);

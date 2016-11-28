@@ -1,5 +1,6 @@
 #pragma once
 #include <pebble.h>
+#include <string.h>
 #include <@smallstoneapps/data-processor/data-processor.h>
 
 #define SETTINGS_KEY 1
@@ -11,7 +12,7 @@ typedef struct ClaySettings
   int FadedRating;
   int SolidRating;
   int SwellPeriod;
-  char *SwellHeight;
+  char SwellHeight[8];
   int SwellDirection;
   int WindSpeed;
   int WindDirection;
