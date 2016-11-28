@@ -5,8 +5,16 @@
 #define SETTINGS_KEY 1
 
 // A structure containing our settings
-typedef struct ClaySettings {
+typedef struct ClaySettings
+{
   int FavouriteHour;
+  int FadedRating;
+  int SolidRating;
+  int SwellPeriod;
+  char *SwellHeight;
+  int SwellDirection;
+  int WindSpeed;
+  int WindDirection;
 } ClaySettings;
 
 static void default_settings();
@@ -20,9 +28,9 @@ static void outbox_sent_callback(DictionaryIterator *iterator, void *context);
 static void update_time();
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
 static void horizontal_ruler_update_proc(Layer *layer, GContext *ctx);
-static void rating_first_update_proc(Layer* layer, GContext* ctx);
-static void rating_second_update_proc(Layer* layer, GContext* ctx);
-static void wave_update_proc(Layer* layer, GContext* ctx);
+static void rating_first_update_proc(Layer *layer, GContext *ctx);
+static void rating_second_update_proc(Layer *layer, GContext *ctx);
+static void wave_update_proc(Layer *layer, GContext *ctx);
 static void layer_add_first_forecast(Layer *window_layer, GRect bounds);
 static void layer_add_second_forecast(Layer *window_layer, GRect bounds);
 static void main_window_load(Window *window);
