@@ -1,6 +1,5 @@
 #pragma once
 #include <pebble.h>
-#include <string.h>
 #include <@smallstoneapps/data-processor/data-processor.h>
 
 #define SETTINGS_KEY 1

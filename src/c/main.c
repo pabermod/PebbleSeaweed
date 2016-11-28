@@ -95,17 +95,12 @@ void copy_string(char d[], char s[]) {
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 {
-    APP_LOG(APP_LOG_LEVEL_ERROR, "adasd!");
-    APP_LOG(APP_LOG_LEVEL_ERROR, "%s", settings[0].SwellHeight);
-    APP_LOG(APP_LOG_LEVEL_ERROR, "%d", settings[0].SwellPeriod);
-
     // Read fav hour tuple
     Tuple *fav_hour_tuple = dict_find(iterator, MESSAGE_KEY_FavouriteHour);
 
     if (fav_hour_tuple)
     {
-		// Favourite hour changed
-
+		// Update favourite hour
 		static char favhour_buffer[4];
 		snprintf(favhour_buffer, sizeof(favhour_buffer),
 			"%s", fav_hour_tuple->value->cstring);
@@ -304,6 +299,11 @@ static void wave_update_proc(Layer *layer, GContext *ctx)
     graphics_draw_bitmap_in_rect(ctx, s_wave_bitmap, GRect(0, 6, 20, 14));
 }
 
+static void wind_update_proc(Layer *layer, GContext *ctx)
+{
+    graphics_draw_bitmap_in_rect(ctx, s_wind_bitmap, GRect(0, 6, 20, 14));
+}
+
 static void layer_add_first_forecast(Layer *window_layer, GRect bounds)
 {
     // First Forecast Layer
@@ -340,6 +340,11 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds)
     text_layer_set_text_color(s_swell_first_layer, GColorWhite);
     text_layer_set_text_alignment(s_swell_first_layer, GTextAlignmentLeft);
     text_layer_set_text(s_swell_first_layer, swell_buffer_first);
+
+    // First wind canvas
+    s_wind_canvas = layer_create(GRect(-4, 43, 20, 20));
+    layer_add_child(s_forecast_first_layer, s_wind_canvas);
+    layer_set_update_proc(s_wind_canvas, wind_update_proc);
 
     // First wind layer
     s_wind_first_layer = text_layer_create(GRect(23, 42, bounds.size.w-23, 21));
@@ -400,6 +405,11 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds)
     text_layer_set_text_color(s_swell_second_layer, GColorWhite);
     text_layer_set_text_alignment(s_swell_second_layer, GTextAlignmentLeft);
     text_layer_set_text(s_swell_second_layer, swell_buffer_second);
+
+    // Second wind canvas
+    s_wind_canvas = layer_create(GRect(-4, 43, 20, 20));
+    layer_add_child(s_forecast_second_layer, s_wind_canvas);
+    layer_set_update_proc(s_wind_canvas, wind_update_proc);
 
     // second wind layer
     s_wind_second_layer = text_layer_create(GRect(23, 42, bounds.size.w-23, 21));
