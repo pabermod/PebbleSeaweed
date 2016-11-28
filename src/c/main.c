@@ -36,8 +36,8 @@ static void default_settings()
     settings[0].FadedRating = settings[1].FadedRating = 0;
     settings[0].SolidRating = settings[1].SolidRating = 0;
     settings[0].SwellPeriod = settings[1].SwellPeriod = 0;
-    strcpy(settings[0].SwellHeight, "Hello");
-    strcpy(settings[1].SwellHeight, "Hello");
+    strcpy(settings[0].SwellHeight, "0m");
+    strcpy(settings[1].SwellHeight, "0m");
     settings[0].SwellDirection = settings[1].SwellDirection = 0;
     settings[0].WindSpeed = settings[1].WindSpeed = 0;
     settings[0].WindDirection = settings[1].WindDirection = 0;
@@ -315,7 +315,7 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds)
     layer_add_child(s_forecast_first_layer, s_ruler_first_layer);
 
     //Create first forecast canvas
-    s_rating_first_canvas = layer_create(GRect(-1, 5, bounds.size.w, 20));
+    s_rating_first_canvas = layer_create(GRect(-1, 5, bounds.size.w-5, 20));
     layer_add_child(s_forecast_first_layer, s_rating_first_canvas);
     layer_set_update_proc(s_rating_first_canvas, rating_first_update_proc);
 
@@ -325,7 +325,7 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds)
     layer_set_update_proc(s_wave_canvas, wave_update_proc);
 
     // First swell layer
-    s_swell_first_layer = text_layer_create(GRect(23, 23, bounds.size.w, 21)); 
+    s_swell_first_layer = text_layer_create(GRect(23, 23, bounds.size.w-23, 21)); 
 
     // Get Swell from settings
     static char swell_period_buffer_first[8];
@@ -342,7 +342,7 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds)
     text_layer_set_text(s_swell_first_layer, swell_buffer_first);
 
     // First wind layer
-    s_wind_first_layer = text_layer_create(GRect(0, 42, bounds.size.w, 21));
+    s_wind_first_layer = text_layer_create(GRect(23, 42, bounds.size.w-23, 21));
 
     // Get wind from settings
     static char wind_speed_buffer_first[8];
@@ -375,7 +375,7 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds)
     layer_add_child(s_forecast_second_layer, s_ruler_second_layer);
 
     //Create first forecast canvas
-    s_rating_second_canvas = layer_create(GRect(-1, 5, bounds.size.w, 20));
+    s_rating_second_canvas = layer_create(GRect(-1, 5, bounds.size.w-5, 20));
     layer_add_child(s_forecast_second_layer, s_rating_second_canvas);
     layer_set_update_proc(s_rating_second_canvas, rating_second_update_proc);
 
@@ -385,7 +385,7 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds)
     layer_set_update_proc(s_wave_canvas, wave_update_proc);
 
     // Second swell layer
-    s_swell_second_layer = text_layer_create(GRect(23, 23, bounds.size.w, 21));
+    s_swell_second_layer = text_layer_create(GRect(23, 23, bounds.size.w-23, 21));
 
     // Get Swell from settings
     static char swell_period_buffer_second[8];
@@ -402,7 +402,7 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds)
     text_layer_set_text(s_swell_second_layer, swell_buffer_second);
 
     // second wind layer
-    s_wind_second_layer = text_layer_create(GRect(0, 42, bounds.size.w, 21));
+    s_wind_second_layer = text_layer_create(GRect(23, 42, bounds.size.w-23, 21));
 
     // Get wind from settings
     static char wind_speed_buffer_second[8];
