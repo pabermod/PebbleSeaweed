@@ -17,7 +17,7 @@ var xhrRequest = function (url, type, callback) {
   xhr.send();
 };
 
-var seaWeedAPIKey = '';
+var seaWeedAPIKey = 'apiKeyHere';
 
 function getForecast(spotId){
 

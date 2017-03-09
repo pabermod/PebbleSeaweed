@@ -47,6 +47,22 @@ module.exports = [
       }
     ]
   },
+    {
+    "type": "select",
+    "messageKey": "Color",
+    "defaultValue": "0",
+    "label": "Color",
+    "options": [
+      { 
+        "label": "White text / Black background",
+        "value": "0" 
+      },
+      { 
+        "label": "Black text / White background",
+        "value": "1" 
+      }
+    ]
+  },
   {
     "type": "submit",
     "defaultValue": "Save Settings"

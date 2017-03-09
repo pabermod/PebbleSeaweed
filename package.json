@@ -17,6 +17,7 @@
     "displayName": "PebbleSeaWeed",
     "enableMultiJS": true,
     "messageKeys": [
+      "Color",
       "FavouriteHour",
       "FadedRating[2]",
       "SolidRating[2]",

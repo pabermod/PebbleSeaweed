@@ -7,6 +7,7 @@
 // A structure containing our settings
 typedef struct ClaySettings
 {
+  int Color;
   int FavouriteHour;
   int FadedRating;
   int SolidRating;
