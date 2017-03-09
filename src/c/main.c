@@ -41,6 +41,7 @@ static void default_settings()
     settings[0].SwellDirection = settings[1].SwellDirection = 0;
     settings[0].WindSpeed = settings[1].WindSpeed = 0;
     settings[0].WindDirection = settings[1].WindDirection = 0;
+    settings[0].Color = settings[0].Color = 0;
 }
 
 // Read settings from persistent storage
@@ -234,10 +235,10 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed)
 {
     update_time();
 
-    // Get weather update every 30 minutes
-    if (tick_time->tm_min % 30 == 0)
+    // Get weather update every 60 minutes
+    if (tick_time->tm_min % 60 == 0)
     {
-	notify_application();
+	    notify_application();
     }
 }
 
