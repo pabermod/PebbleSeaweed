@@ -26,22 +26,42 @@ static Layer *s_ruler_second_layer;
 
 static const int16_t MARGIN = 4;
 
-// An instance of the struct
-static ClaySettings settings[2];
+static ForecastData forecast[2];
+static ClaySettings settings;
+
+// Initialize the default forecast
+static void default_forecast()
+{
+    forecast[0].FadedRating = forecast[1].FadedRating = 0;
+    forecast[0].SolidRating = forecast[1].SolidRating = 0;
+    forecast[0].SwellPeriod = forecast[1].SwellPeriod = 0;
+    strcpy(forecast[0].SwellHeight, "0m");
+    strcpy(forecast[1].SwellHeight, "0m");
+    forecast[0].SwellDirection = forecast[1].SwellDirection = 0;
+    forecast[0].WindSpeed = forecast[1].WindSpeed = 0;
+    forecast[0].WindDirection = forecast[1].WindDirection = 0;
+}
 
 // Initialize the default settings
 static void default_settings()
 {
-    settings[0].FavouriteHour = settings[1].FavouriteHour = 13;    
-    settings[0].FadedRating = settings[1].FadedRating = 0;
-    settings[0].SolidRating = settings[1].SolidRating = 0;
-    settings[0].SwellPeriod = settings[1].SwellPeriod = 0;
-    strcpy(settings[0].SwellHeight, "0m");
-    strcpy(settings[1].SwellHeight, "0m");
-    settings[0].SwellDirection = settings[1].SwellDirection = 0;
-    settings[0].WindSpeed = settings[1].WindSpeed = 0;
-    settings[0].WindDirection = settings[1].WindDirection = 0;
-    settings[0].Color = settings[0].Color = 0;
+    settings.FavouriteHour = 13;    
+    settings.Color = 0;
+}
+
+// Read forecast from persistent storage
+static void load_forecast()
+{
+    // Load the default forecast
+    default_forecast();
+    // Read forecast from persistent storage, if they exist
+    persist_read_data(FORECAST_KEY, &forecast, sizeof(forecast));
+}
+
+// Save forecast to persistent storage
+static void save_forecast()
+{
+    persist_write_data(FORECAST_KEY, &forecast, sizeof(forecast));
 }
 
 // Read settings from persistent storage
@@ -53,7 +73,7 @@ static void load_settings()
     persist_read_data(SETTINGS_KEY, &settings, sizeof(settings));
 }
 
-// Save the settings to persistent storage
+// Save settings to persistent storage
 static void save_settings()
 {
     persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
@@ -96,109 +116,129 @@ void copy_string(char d[], char s[]) {
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 {
-    // Read fav hour tuple
+    APP_LOG(APP_LOG_LEVEL_INFO, "Message received");
+
+    // Read settings
     Tuple *fav_hour_tuple = dict_find(iterator, MESSAGE_KEY_FavouriteHour);
 
     if (fav_hour_tuple)
     {
+        bool updateData = false;
+
 		// Update favourite hour
-		static char favhour_buffer[4];
-		snprintf(favhour_buffer, sizeof(favhour_buffer),
-			"%s", fav_hour_tuple->value->cstring);
-
-		int new_favhour = atoi(favhour_buffer);
-		if (new_favhour != settings[0].FavouriteHour)
+		int new_favhour = fav_hour_tuple->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "Hour: %d -> %d", settings.FavouriteHour, new_favhour);
+		if (new_favhour != settings.FavouriteHour)
 		{
-			settings[0].FavouriteHour = settings[1].FavouriteHour = new_favhour;
-			save_settings();
-			notify_application();
+			settings.FavouriteHour = new_favhour;	
+            updateData = true;	
 		}
-    }
-    else
-    {
-		Tuple *faded_rating_one = dict_find(iterator, MESSAGE_KEY_FadedRating);
-        Tuple *faded_rating_two = dict_find(iterator, MESSAGE_KEY_FadedRating+1);
-		Tuple *solid_rating_one = dict_find(iterator, MESSAGE_KEY_SolidRating);
-		Tuple *solid_rating_two = dict_find(iterator, MESSAGE_KEY_SolidRating+1);
-		Tuple *swell_period_one = dict_find(iterator, MESSAGE_KEY_SwellPeriod);
-		Tuple *swell_period_two = dict_find(iterator, MESSAGE_KEY_SwellPeriod+1);
-		Tuple *swell_heights_tuple = dict_find(iterator, MESSAGE_KEY_SwellHeight);
-		Tuple *swell_direction_one = dict_find(iterator, MESSAGE_KEY_SwellDirection);
-        Tuple *swell_direction_two = dict_find(iterator, MESSAGE_KEY_SwellDirection+1);
-		Tuple *wind_speed_one = dict_find(iterator, MESSAGE_KEY_WindSpeed);
-        Tuple *wind_speed_two = dict_find(iterator, MESSAGE_KEY_WindSpeed+1);
-		Tuple *wind_direction_one = dict_find(iterator, MESSAGE_KEY_WindDirection);
-        Tuple *wind_direction_two = dict_find(iterator, MESSAGE_KEY_WindDirection+1);
 
-		// If all data is available, use it
-		if (faded_rating_one && faded_rating_two && solid_rating_one && solid_rating_two &&
-            swell_period_one && swell_period_two && swell_heights_tuple && 
-            swell_direction_one && swell_direction_two && wind_speed_one && 
-            wind_speed_two && wind_direction_one && wind_direction_two)
+        // Update color
+        Tuple *color_tuple = dict_find(iterator, MESSAGE_KEY_Color);
+		int new_color = color_tuple->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "Color: %d -> %d", settings.Color, new_color);
+		if (new_color != settings.Color)
 		{
-            // Update ratings
-            settings[0].FadedRating = faded_rating_one->value->int32;
-            settings[1].FadedRating = faded_rating_two->value->int32;
-            settings[0].SolidRating = solid_rating_one->value->int32;
-            settings[1].SolidRating = solid_rating_two->value->int32;
+			settings.Color  = new_color;	
+            updateData = true;		
+		}
 
-            // Update Swell
-            static char swell_period_buffer_first[8];
-            static char swell_period_buffer_second[8];
-            
-            settings[0].SwellPeriod = swell_period_one->value->int32;
-                snprintf(swell_period_buffer_first, sizeof(swell_period_buffer_first),
-				    "%ds", settings[0].SwellPeriod);
-
-            settings[1].SwellPeriod = swell_period_two->value->int32;
-            snprintf(swell_period_buffer_second, sizeof(swell_period_buffer_second),
-                "%ds", settings[1].SwellPeriod);
-
-			// Update height
-			char **strings = parse_data(swell_heights_tuple->value->cstring);
-
-			// Write height data to buffer
-			snprintf(settings[0].SwellHeight, sizeof(settings[0].SwellHeight),
-				"%sm", strings[0]);
-			snprintf(settings[1].SwellHeight, sizeof(settings[1].SwellHeight),
-				"%sm", strings[1]);
-
-            settings[0].SwellDirection = swell_direction_one->value->int32;
-            settings[1].SwellDirection = swell_direction_two->value->int32;
-
-			static char swell_buffer_first[16];
-			static char swell_buffer_second[16];
-            
-            // Assemble full first swell and display
-            snprintf(swell_buffer_first, sizeof(swell_buffer_first), "%s %s",
-                settings[0].SwellHeight, swell_period_buffer_first);
-            text_layer_set_text(s_swell_first_layer, swell_buffer_first);
-
-			// Assemble full second swell and display
-			snprintf(swell_buffer_second, sizeof(swell_buffer_first), "%s %s",
-				settings[1].SwellHeight, swell_period_buffer_second);
-			text_layer_set_text(s_swell_second_layer, swell_buffer_second);
-            
-            // Update Wind
-            static char wind_speed_buffer_first[8];
-            static char wind_speed_buffer_second[8];
-            
-            settings[0].WindSpeed = wind_speed_one->value->int32;
-            snprintf(wind_speed_buffer_first, sizeof(wind_speed_buffer_first),
-                "%dkmh", settings[0].WindSpeed);
-            text_layer_set_text(s_wind_first_layer, wind_speed_buffer_first);
-
-            settings[1].WindSpeed = wind_speed_two->value->int32;
-            snprintf(wind_speed_buffer_second, sizeof(wind_speed_buffer_second),
-                "%dkmh", settings[1].WindSpeed);
-            text_layer_set_text(s_wind_second_layer, wind_speed_buffer_second);
-
-            settings[0].WindDirection = wind_direction_one->value->int32;
-            settings[1].WindDirection = wind_direction_two->value->int32;
-
-            // Save settings
+        if(updateData)
+        {
             save_settings();
-		}
+			//notify_application();
+        }
+    }
+
+    // Read forecast
+    Tuple *faded_rating_one = dict_find(iterator, MESSAGE_KEY_FadedRating);
+
+    if(!faded_rating_one){
+        return;
+    }
+
+    Tuple *faded_rating_two = dict_find(iterator, MESSAGE_KEY_FadedRating+1);
+    Tuple *solid_rating_one = dict_find(iterator, MESSAGE_KEY_SolidRating);
+    Tuple *solid_rating_two = dict_find(iterator, MESSAGE_KEY_SolidRating+1);
+    Tuple *swell_period_one = dict_find(iterator, MESSAGE_KEY_SwellPeriod);
+    Tuple *swell_period_two = dict_find(iterator, MESSAGE_KEY_SwellPeriod+1);
+    Tuple *swell_heights_tuple = dict_find(iterator, MESSAGE_KEY_SwellHeight);
+    Tuple *swell_direction_one = dict_find(iterator, MESSAGE_KEY_SwellDirection);
+    Tuple *swell_direction_two = dict_find(iterator, MESSAGE_KEY_SwellDirection+1);
+    Tuple *wind_speed_one = dict_find(iterator, MESSAGE_KEY_WindSpeed);
+    Tuple *wind_speed_two = dict_find(iterator, MESSAGE_KEY_WindSpeed+1);
+    Tuple *wind_direction_one = dict_find(iterator, MESSAGE_KEY_WindDirection);
+    Tuple *wind_direction_two = dict_find(iterator, MESSAGE_KEY_WindDirection+1);
+
+    // If all data is available, use it
+    if (faded_rating_two && solid_rating_one && solid_rating_two &&
+        swell_period_one && swell_period_two && swell_heights_tuple && 
+        swell_direction_one && swell_direction_two && wind_speed_one && 
+        wind_speed_two && wind_direction_one && wind_direction_two)
+    {
+        // Update ratings
+        forecast[0].FadedRating = faded_rating_one->value->int32;
+        forecast[1].FadedRating = faded_rating_two->value->int32;
+        forecast[0].SolidRating = solid_rating_one->value->int32;
+        forecast[1].SolidRating = solid_rating_two->value->int32;
+
+        // Update Swell
+        static char swell_period_buffer_first[8];
+        static char swell_period_buffer_second[8];
+        
+        forecast[0].SwellPeriod = swell_period_one->value->int32;
+            snprintf(swell_period_buffer_first, sizeof(swell_period_buffer_first),
+                "%ds", forecast[0].SwellPeriod);
+
+        forecast[1].SwellPeriod = swell_period_two->value->int32;
+        snprintf(swell_period_buffer_second, sizeof(swell_period_buffer_second),
+            "%ds", forecast[1].SwellPeriod);
+
+        // Update height
+        char **strings = parse_data(swell_heights_tuple->value->cstring);
+
+        // Write height data to buffer
+        snprintf(forecast[0].SwellHeight, sizeof(forecast[0].SwellHeight),
+            "%sm", strings[0]);
+        snprintf(forecast[1].SwellHeight, sizeof(forecast[1].SwellHeight),
+            "%sm", strings[1]);
+
+        forecast[0].SwellDirection = swell_direction_one->value->int32;
+        forecast[1].SwellDirection = swell_direction_two->value->int32;
+
+        static char swell_buffer_first[16];
+        static char swell_buffer_second[16];
+        
+        // Assemble full first swell and display
+        snprintf(swell_buffer_first, sizeof(swell_buffer_first), "%s %s",
+            forecast[0].SwellHeight, swell_period_buffer_first);
+        text_layer_set_text(s_swell_first_layer, swell_buffer_first);
+
+        // Assemble full second swell and display
+        snprintf(swell_buffer_second, sizeof(swell_buffer_first), "%s %s",
+            forecast[1].SwellHeight, swell_period_buffer_second);
+        text_layer_set_text(s_swell_second_layer, swell_buffer_second);
+        
+        // Update Wind
+        static char wind_speed_buffer_first[8];
+        static char wind_speed_buffer_second[8];
+        
+        forecast[0].WindSpeed = wind_speed_one->value->int32;
+        snprintf(wind_speed_buffer_first, sizeof(wind_speed_buffer_first),
+            "%dkmh", forecast[0].WindSpeed);
+        text_layer_set_text(s_wind_first_layer, wind_speed_buffer_first);
+
+        forecast[1].WindSpeed = wind_speed_two->value->int32;
+        snprintf(wind_speed_buffer_second, sizeof(wind_speed_buffer_second),
+            "%dkmh", forecast[1].WindSpeed);
+        text_layer_set_text(s_wind_second_layer, wind_speed_buffer_second);
+
+        forecast[0].WindDirection = wind_direction_one->value->int32;
+        forecast[1].WindDirection = wind_direction_two->value->int32;
+
+        // Save forecast
+        save_forecast();
     }
 }
 
@@ -261,13 +301,13 @@ static void rating_first_update_proc(Layer *layer, GContext *ctx)
 
     int width = 20;
     int i = 0;
-    for (i = 0; i < settings[0].SolidRating; ++i)
+    for (i = 0; i < forecast[0].SolidRating; ++i)
     {
 	    graphics_draw_bitmap_in_rect(ctx, s_star_full_bitmap, 
             GRect(width * i, 0, width, width - 1));
     }
 
-    for (int j = 0; j < settings[0].FadedRating; ++j)
+    for (int j = 0; j < forecast[0].FadedRating; ++j)
     {
 	    graphics_draw_bitmap_in_rect(ctx, s_star_empty_bitmap, 
             GRect(width * (i + j), 0, width, width - 1));
@@ -282,13 +322,13 @@ static void rating_second_update_proc(Layer *layer, GContext *ctx)
 
     int width = 20;
     int i = 0;
-    for (i = 0; i < settings[1].SolidRating; ++i)
+    for (i = 0; i < forecast[1].SolidRating; ++i)
     {
 	    graphics_draw_bitmap_in_rect(ctx, s_star_full_bitmap, 
             GRect(width * i, 0, width, width - 1));
     }
 
-    for (int j = 0; j < settings[1].FadedRating; ++j)
+    for (int j = 0; j < forecast[1].FadedRating; ++j)
     {
 	    graphics_draw_bitmap_in_rect(ctx, s_star_empty_bitmap, 
             GRect(width * (i + j), 0, width, width - 1));
@@ -328,13 +368,13 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds)
     // First swell layer
     s_swell_first_layer = text_layer_create(GRect(23, 23, bounds.size.w-23, 21)); 
 
-    // Get Swell from settings
+    // Get Swell from forecast
     static char swell_period_buffer_first[8];
     snprintf(swell_period_buffer_first, sizeof(swell_period_buffer_first),
-        "%ds", settings[0].SwellPeriod);
+        "%ds", forecast[0].SwellPeriod);
     static char swell_buffer_first[16];
     snprintf(swell_buffer_first, sizeof(swell_buffer_first), "%s %s",
-        settings[0].SwellHeight, swell_period_buffer_first);
+        forecast[0].SwellHeight, swell_period_buffer_first);
 
     // Style the text and display
     text_layer_set_background_color(s_swell_first_layer, GColorClear);
@@ -350,10 +390,10 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds)
     // First wind layer
     s_wind_first_layer = text_layer_create(GRect(23, 42, bounds.size.w-23, 21));
 
-    // Get wind from settings
+    // Get wind from forecast
     static char wind_speed_buffer_first[8];
     snprintf(wind_speed_buffer_first, sizeof(wind_speed_buffer_first),
-        "%dkmh", settings[0].WindSpeed);
+        "%dkmh", forecast[0].WindSpeed);
 
     text_layer_set_background_color(s_wind_first_layer, GColorClear);
     text_layer_set_text_color(s_wind_first_layer, GColorWhite);
@@ -393,13 +433,13 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds)
     // Second swell layer
     s_swell_second_layer = text_layer_create(GRect(23, 23, bounds.size.w-23, 21));
 
-    // Get Swell from settings
+    // Get Swell from forecast
     static char swell_period_buffer_second[8];
     snprintf(swell_period_buffer_second, sizeof(swell_period_buffer_second),
-        "%ds", settings[1].SwellPeriod);
+        "%ds", forecast[1].SwellPeriod);
     static char swell_buffer_second[16];
     snprintf(swell_buffer_second, sizeof(swell_buffer_second), "%s %s",
-        settings[1].SwellHeight, swell_period_buffer_second);
+        forecast[1].SwellHeight, swell_period_buffer_second);
 
     // Style the text
     text_layer_set_background_color(s_swell_second_layer, GColorClear);
@@ -415,10 +455,10 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds)
     // second wind layer
     s_wind_second_layer = text_layer_create(GRect(23, 42, bounds.size.w-23, 21));
 
-    // Get wind from settings
+    // Get wind from forecast
     static char wind_speed_buffer_second[8];
     snprintf(wind_speed_buffer_second, sizeof(wind_speed_buffer_second),
-        "%dkmh", settings[1].WindSpeed);
+        "%dkmh", forecast[1].WindSpeed);
 
     text_layer_set_background_color(s_wind_second_layer, GColorClear);
     text_layer_set_text_color(s_wind_second_layer, GColorWhite);
@@ -495,6 +535,7 @@ static void main_window_unload(Window *window)
 
 static void init()
 {
+    load_forecast();
     load_settings();
 
     // Create main Window element and assign to pointer
@@ -530,7 +571,7 @@ static void init()
     app_message_register_outbox_sent(outbox_sent_callback);
 
     // Open AppMessage
-    const int inbox_size = 128;
+    const int inbox_size = 256;
     const int outbox_size = 128;
     app_message_open(inbox_size, outbox_size);
 }

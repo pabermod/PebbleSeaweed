@@ -2,13 +2,12 @@
 #include <pebble.h>
 #include <@smallstoneapps/data-processor/data-processor.h>
 
-#define SETTINGS_KEY 1
+#define FORECAST_KEY 1
+#define SETTINGS_KEY 2
 
 // A structure containing our settings
-typedef struct ClaySettings
+typedef struct ForecastData
 {
-  int Color;
-  int FavouriteHour;
   int FadedRating;
   int SolidRating;
   int SwellPeriod;
@@ -16,6 +15,13 @@ typedef struct ClaySettings
   int SwellDirection;
   int WindSpeed;
   int WindDirection;
+} ForecastData;
+
+// A structure containing our settings
+typedef struct ClaySettings
+{
+  int Color;
+  int FavouriteHour;
 } ClaySettings;
 
 static void default_settings();
