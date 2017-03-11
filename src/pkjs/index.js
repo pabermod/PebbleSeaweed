@@ -2,7 +2,7 @@
 var Clay = require('pebble-clay');
 // Load our Clay configuration file
 var clayConfig = require('./config');
-// Initialize Clay
+// Initialize Clay with manual event handling
 var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
 
 // Require the keys' numeric values.
@@ -17,28 +17,44 @@ var xhrRequest = function (url, type, callback) {
   xhr.send();
 };
 
-var seaWeedAPIKey = 'apiKeyHere';
+function SendMessageToPebble(dict, messageType){
+  Pebble.sendAppMessage(dict, function() {
+    console.log(messageType + ' sent: ' + JSON.stringify(dict));
+  }, function(e) {
+    console.log('Failed to send ' + messageType);
+    console.log(JSON.stringify(e));
+  });
+}
 
-function sendResponse(spotId){
+var seaWeedAPIKey = '';
 
+var favHour = '13';
+
+function sendSettings(){
   var settings = {};
-  var favHourStr = '13';
   var colorStr = '0';
-  
+
   try {    
     settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
     if (typeof settings.FavouriteHour != 'undefined'){
       favHourStr = settings.FavouriteHour;  
-    }
-    console.log('fav hour is: ' + favHourStr); 
+    } 
     if (typeof settings.Color != 'undefined'){
       colorStr = settings.Color;  
     }
-    console.log('color is: ' + colorStr); 
-  } catch (e) {  console.log('Exception Getting Settings');}
+  } catch (e) {  
+    console.log('Exception Getting Settings');
+  }
 
-  var favHour = parseInt(favHourStr);
-  var color = parseInt(colorStr);
+  var dictionary = {};
+  dictionary[keys.FavouriteHour] = parseInt(favHourStr);
+  dictionary[keys.Color] = parseInt(colorStr);
+
+  SendMessageToPebble(dictionary, "sendSettings");
+}
+
+function sendResponse(spotId){
+  var settings = {};
 
   // Construct URL
   var url = 'http://magicseaweed.com/api/' + seaWeedAPIKey + 
@@ -54,7 +70,6 @@ function sendResponse(spotId){
       var json = JSON.parse(responseText);
       var num = 0;
       
-      // Create dictionary
       var dictionary = {};
       
       dictionary[keys.SwellHeight] = '';
@@ -81,18 +96,8 @@ function sendResponse(spotId){
           dictionary[keys.SwellHeight] += '|';
         }
       }
-      
 
-      dictionary[keys.FavouriteHour] = favHour;
-      dictionary[keys.Color] = color;
-
-      // Send to Pebble
-      // Send the object
-      Pebble.sendAppMessage(dictionary, function() {
-        console.log('Message sent successfully: ' + JSON.stringify(dictionary));
-      }, function(e) {
-        console.log('Message failed: ' + JSON.stringify(e));
-      });
+      SendMessageToPebble(dictionary, "forecast");
     }
   );
 }
@@ -107,9 +112,6 @@ Pebble.addEventListener('ready',
 
 // Get AppMessage events
 Pebble.addEventListener('appmessage', function(e) {
-  // Get the dictionary from the message
-  var dict = e.payload;
-
   sendResponse(177);
 });
 
@@ -121,15 +123,11 @@ Pebble.addEventListener('webviewclosed', function(e) {
   if (e && !e.response) {
     return;
   }
-
   // Get the keys and values from each config item
   var dict = clay.getSettings(e.response);
 
-  // Send settings values to watch side
-  Pebble.sendAppMessage(dict, function(e) {
-    console.log('Config data sent: ' + JSON.stringify(dict));
-  }, function(e) {
-    console.log('Failed to send config data!');
-    console.log(JSON.stringify(e));
-  });
+  dict[keys.FavouriteHour] = parseInt(dict[keys.FavouriteHour]);
+  dict[keys.Color] = parseInt(dict[keys.Color]);
+
+  SendMessageToPebble(dict, "clay settings");
 });
