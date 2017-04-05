@@ -5,7 +5,35 @@ module.exports = [
   },
   {
     "type": "text",
-    "defaultValue": "Here is some introductory text."
+    "defaultValue": "Set your configuration"
+  },
+  {
+    "type": "select",
+    "messageKey": "Spot",
+    "defaultValue": "177",
+    "label": "Spot",
+    "options": [
+      { 
+        "label": "Rodiles",
+        "value": "178" 
+      },
+      { 
+        "label": "Salinas/San Juan",
+        "value": "177" 
+      },    
+      { 
+        "label": "San Lorenzo",
+        "value": "4387" 
+      },
+      { 
+        "label": "Verdicio",
+        "value": "4386" 
+      },
+      { 
+        "label": "Xagó",
+        "value": "4385" 
+      },
+    ]
   },
   {
     "type": "select",
@@ -47,7 +75,7 @@ module.exports = [
       }
     ]
   },
-    {
+  {
     "type": "select",
     "messageKey": "Color",
     "defaultValue": "0",

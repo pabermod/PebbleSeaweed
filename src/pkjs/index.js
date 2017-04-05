@@ -26,36 +26,38 @@ function SendMessageToPebble(dict, messageType){
   });
 }
 
-var seaWeedAPIKey = '';
+var seaWeedAPIKey = 'apiKey';
 
-var favHour = '13';
+var favHour = 13;
+var spot = 177;
+var color = 0;
 
 function sendSettings(){
   var settings = {};
-  var colorStr = '0';
-
   try {    
     settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
-    if (typeof settings.FavouriteHour != 'undefined'){
-      favHourStr = settings.FavouriteHour;  
+    if (typeof settings.FavouriteHour != 'undefined'){  
+      favHour = parseInt(settings.FavouriteHour);
     } 
     if (typeof settings.Color != 'undefined'){
-      colorStr = settings.Color;  
+      color = parseInt(settings.Color);  
+    }
+    if (typeof settings.Spot != 'undefined'){
+      spot = parseInt(settings.Spot); 
     }
   } catch (e) {  
     console.log('Exception Getting Settings');
   }
 
   var dictionary = {};
-  dictionary[keys.FavouriteHour] = parseInt(favHourStr);
-  dictionary[keys.Color] = parseInt(colorStr);
+  dictionary[keys.FavouriteHour] = favHour;
+  dictionary[keys.Color] = color;
+  dictionary[keys.Spot] = spot;
 
   SendMessageToPebble(dictionary, "sendSettings");
 }
 
 function sendResponse(spotId){
-  var settings = {};
-
   // Construct URL
   var url = 'http://magicseaweed.com/api/' + seaWeedAPIKey + 
       '/forecast/?spot_id=' + spotId + '&units=eu'+
@@ -107,12 +109,12 @@ Pebble.addEventListener('ready',
   function (e) {
     console.log('PebbleKit JS ready!');
     // Get the initial forecast
-    sendResponse(177);
+    sendResponse(spot);
   });
 
 // Get AppMessage events
 Pebble.addEventListener('appmessage', function(e) {
-  sendResponse(177);
+  sendResponse(spot);
 });
 
 Pebble.addEventListener('showConfiguration', function(e) {
@@ -128,6 +130,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
 
   dict[keys.FavouriteHour] = parseInt(dict[keys.FavouriteHour]);
   dict[keys.Color] = parseInt(dict[keys.Color]);
+  dict[Keys.Spot] = parseInt(dict[Keys.Spot])
 
   SendMessageToPebble(dict, "clay settings");
 });
