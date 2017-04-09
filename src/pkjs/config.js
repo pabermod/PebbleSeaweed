@@ -38,40 +38,40 @@ module.exports = [
   {
     "type": "select",
     "messageKey": "FavouriteHour",
-    "defaultValue": "13",
-    "label": "Favourite Hour",
+    "defaultValue": "18",
+    "label": "Favourite Hour (GMT)",
     "options": [
       { 
-        "label": "1:00",
-        "value": "1" 
+        "label": "0:00",
+        "value": "0" 
       },
       { 
-        "label": "4:00",
-        "value": "4" 
+        "label": "3:00",
+        "value": "3" 
       },
       { 
-        "label": "7:00",
-        "value": "7" 
+        "label": "6:00",
+        "value": "6" 
       },
       { 
-        "label": "10:00",
-        "value": "10" 
+        "label": "9:00",
+        "value": "9" 
       },
       { 
-        "label": "13:00",
-        "value": "13" 
+        "label": "12:00",
+        "value": "12" 
       },
       { 
-        "label": "16:00",
-        "value": "16" 
+        "label": "15:00",
+        "value": "15" 
       },
       { 
-        "label": "19:00",
-        "value": "19" 
+        "label": "18:00",
+        "value": "18" 
       },
       { 
-        "label": "22:00",
-        "value": "22" 
+        "label": "21:00",
+        "value": "21" 
       }
     ]
   },

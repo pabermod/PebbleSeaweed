@@ -43,8 +43,9 @@ static void default_forecast(){
 
 // Initialize the default settings
 static void default_settings(){
-    settings.FavouriteHour = 13;    
+    settings.FavouriteHour = 12;    
     settings.Color = 0;
+    settings.Spot = 177;
 }
 
 // Read forecast from persistent storage
@@ -130,6 +131,15 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 			settings.Color  = new_color;	
 		}
 
+        // Update spot
+        Tuple *spot_tuple = dict_find(iterator, MESSAGE_KEY_Spot);
+		int new_spot = spot_tuple->value->int32;
+        APP_LOG(APP_LOG_LEVEL_INFO, "Spot: %d -> %d", settings.Spot, new_spot);
+		if (new_spot != settings.Spot)
+		{
+			settings.Spot  = new_spot;	
+		}
+
         save_settings();
     }
     else{
@@ -154,6 +164,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             && swell_direction_one && swell_direction_two && wind_speed_one 
             && wind_speed_two && wind_direction_one && wind_direction_two)
         {
+            APP_LOG(APP_LOG_LEVEL_INFO, "forecast received"); 
             // Update ratings
             forecast[0].FadedRating = faded_rating_one->value->int32;
             forecast[1].FadedRating = faded_rating_two->value->int32;

@@ -1,8 +1,6 @@
-// Import the Clay package
+// Initialize configuration
 var Clay = require('pebble-clay');
-// Load our Clay configuration file
 var clayConfig = require('./config');
-// Initialize Clay with manual event handling
 var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
 
 // Require the keys' numeric values.
@@ -28,7 +26,7 @@ function SendMessageToPebble(dict, messageType){
 
 var seaWeedAPIKey = 'apiKey';
 
-var favHour = 13;
+var favHour = 12;
 var spot = 177;
 var color = 0;
 
@@ -61,7 +59,7 @@ function sendResponse(spotId){
   // Construct URL
   var url = 'http://magicseaweed.com/api/' + seaWeedAPIKey + 
       '/forecast/?spot_id=' + spotId + '&units=eu'+
-      '&fields=localTimestamp,fadedRating,solidRating,'+
+      '&fields=timestamp,fadedRating,solidRating,'+
       'swell.components.combined.*,'+
       'wind.speed,wind.direction';
   
@@ -73,12 +71,12 @@ function sendResponse(spotId){
       var num = 0;
       
       var dictionary = {};
-      
       dictionary[keys.SwellHeight] = '';
+      var timezoneOffsetHours = new Date().getTimezoneOffset() / 60;
       // Get only the first 2 forecasts
       for(var k in json){
-        var date = new Date(json[k].localTimestamp*1000);
-        if(date.getHours() == favHour){
+        var date = new Date(json[k].timestamp*1000);     
+        if(date.getHours() == favHour - timezoneOffsetHours){
           // Swell Keys
           dictionary[keys.FadedRating + num] = json[k].fadedRating;
           dictionary[keys.SolidRating + num] = json[k].solidRating;
@@ -130,7 +128,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
 
   dict[keys.FavouriteHour] = parseInt(dict[keys.FavouriteHour]);
   dict[keys.Color] = parseInt(dict[keys.Color]);
-  dict[Keys.Spot] = parseInt(dict[Keys.Spot])
+  dict[keys.Spot] = parseInt(dict[keys.Spot])
 
   SendMessageToPebble(dict, "clay settings");
 });

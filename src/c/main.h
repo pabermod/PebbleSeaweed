@@ -22,12 +22,17 @@ typedef struct ClaySettings
 {
   int Color;
   int FavouriteHour;
+  int Spot;
 } ClaySettings;
 
+static void default_forecast();
 static void default_settings();
+static void load_forecast();
+static void save_forecast();
 static void load_settings();
 static void save_settings();
 static void notify_application();
+static char **parse_data(char *data);
 static void inbox_received_callback(DictionaryIterator *iter, void *context);
 static void inbox_dropped_callback(AppMessageResult reason, void *context);
 static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context);
@@ -38,6 +43,7 @@ static void horizontal_ruler_update_proc(Layer *layer, GContext *ctx);
 static void rating_first_update_proc(Layer *layer, GContext *ctx);
 static void rating_second_update_proc(Layer *layer, GContext *ctx);
 static void wave_update_proc(Layer *layer, GContext *ctx);
+static void wind_update_proc(Layer *layer, GContext *ctx);
 static void layer_add_first_forecast(Layer *window_layer, GRect bounds);
 static void layer_add_second_forecast(Layer *window_layer, GRect bounds);
 static void main_window_load(Window *window);

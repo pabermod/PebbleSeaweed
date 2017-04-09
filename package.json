@@ -19,6 +19,7 @@
     "messageKeys": [
       "Color",
       "FavouriteHour",
+      "Spot",
       "FadedRating[2]",
       "SolidRating[2]",
       "SwellPeriod[2]",
