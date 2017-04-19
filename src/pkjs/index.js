@@ -31,7 +31,6 @@ function GetSettings(){
   var spot = 177;
   var color = 0;  
   try {    
-    console.log("settings: " + localStorage.getItem('clay-settings'));
     var settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
     if (typeof settings.FavouriteHour != 'undefined'){  
       favHour = parseInt(settings.FavouriteHour);
