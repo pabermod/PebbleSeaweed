@@ -52,9 +52,9 @@ static void notify_application(){
 }
 
 // Save settings to persistent storage
-static void save_settings(bool updateForecast){
+static void save_settings(){
     persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
-    if(updateForecast) notify_application();
+    notify_application();
 }
 
 static char **parse_data(char *data){
@@ -85,14 +85,12 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     Tuple *fav_hour_tuple = dict_find(iterator, MESSAGE_KEY_FavouriteHour);
 
     if (fav_hour_tuple){
-        bool updateForecast = false;
 		// Update favourite hour
 		int new_favhour = fav_hour_tuple->value->int32;
         APP_LOG(APP_LOG_LEVEL_INFO, "Hour: %d -> %d", settings.FavouriteHour, new_favhour);
 		if (new_favhour != settings.FavouriteHour)
 		{
 			settings.FavouriteHour = new_favhour;	
-            updateForecast = true;
 		}
 
         // Update color
@@ -111,10 +109,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 		if (new_spot != settings.Spot)
 		{
 			settings.Spot  = new_spot;	
-            updateForecast = true;
 		}
 
-        save_settings(updateForecast);
+        save_settings();
     }
     else{
         // Read forecast
@@ -227,8 +224,8 @@ static void update_time(){
     strftime(s_buffer, sizeof(s_buffer), clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
 
     // Display this time on the TextLayer
-    //text_layer_set_text(s_time_layer, s_buffer);
-    text_layer_set_text(s_time_layer, "00:00");
+    text_layer_set_text(s_time_layer, s_buffer);
+    //text_layer_set_text(s_time_layer, "00:00");
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
@@ -447,26 +444,27 @@ static void layer_add_time_text_layer(Layer *window_layer, GRect bounds){
 
 static void battery_update_proc(Layer *layer, GContext *ctx) {
     GRect bounds = layer_get_bounds(layer);
+     
+    graphics_context_set_stroke_color(ctx, GColorWhite);
+    graphics_draw_rect(ctx, GRect(0, 0, bounds.size.w, bounds.size.h));
 
-    // Find the width of the bar (total width = 114px)
-    int height = (s_battery_level * bounds.size.h) / 100;
+    // Find the width of the bar
+    int height = (s_battery_level * (bounds.size.h - 4)) / 100;
 
     // Draw the background
     graphics_context_set_fill_color(ctx, GColorBlack);
-    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(2, 2, bounds.size.w - 4, bounds.size.h - 4), 0, GCornerNone);
 
     // Draw the bar
     graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_fill_rect(ctx, GRect(0, bounds.size.h - height, bounds.size.w, height), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(2, bounds.size.h - 2 - height, bounds.size.w - 4, height), 0, GCornerNone);
 }
 
 static void layer_add_battery_layer(Layer *window_layer, GRect bounds){
     // Create side statusbar layer
     s_battery_layer = layer_create(
         GRect(bounds.size.w - 5 * MARGIN - MARGIN/2, 
-              MARGIN, 
-              bounds.size.w - (bounds.size.w - 5 * MARGIN - MARGIN/2), 
-              30));
+              MARGIN, 18, 30));
 
     layer_set_update_proc(s_battery_layer, battery_update_proc);
     

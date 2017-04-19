@@ -62,7 +62,7 @@ static void load_forecast();
 static void save_forecast();
 static void load_settings();
 static void notify_application();
-static void save_settings(bool updateForecast);
+static void save_settings();
 static char **parse_data(char *data);
 void copy_string(char d[], char s[]);
 static void inbox_received_callback(DictionaryIterator *iter, void *context);

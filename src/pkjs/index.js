@@ -31,6 +31,7 @@ function GetSettings(){
   var spot = 177;
   var color = 0;  
   try {    
+    console.log(localStorage.getItem('clay-settings'));
     var settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
     if (typeof settings.FavouriteHour != 'undefined'){  
       favHour = parseInt(settings.FavouriteHour);
@@ -127,5 +128,6 @@ Pebble.addEventListener('webviewclosed', function(e) {
   if (e && !e.response) {
     return;
   }
+  clay.getSettings(e.response);
   SendSettings();
 });
