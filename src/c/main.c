@@ -1,34 +1,4 @@
 #include "main.h"
-
-static Window *s_main_window;
-static TextLayer *s_time_layer;
-
-static GFont s_time_font;
-static GFont s_forecast_font;
-
-static GBitmap *s_star_empty_bitmap;
-static GBitmap *s_star_full_bitmap;
-static GBitmap *s_wave_bitmap;
-static GBitmap *s_wind_bitmap;
-
-static Layer *s_forecast_first_layer;
-static Layer *s_forecast_second_layer;
-static Layer *s_rating_first_canvas;
-static Layer *s_rating_second_canvas;
-static Layer *s_wave_canvas;
-static Layer *s_wind_canvas;
-static TextLayer *s_swell_first_layer;
-static TextLayer *s_wind_first_layer;
-static TextLayer *s_swell_second_layer;
-static TextLayer *s_wind_second_layer;
-static Layer *s_ruler_first_layer;
-static Layer *s_ruler_second_layer;
-
-static const int16_t MARGIN = 4;
-
-static ForecastData forecast[2];
-static ClaySettings settings;
-
 // Initialize the default forecast
 static void default_forecast(){
     forecast[0].FadedRating = forecast[1].FadedRating = 0;
@@ -69,11 +39,6 @@ static void load_settings(){
     persist_read_data(SETTINGS_KEY, &settings, sizeof(settings));
 }
 
-// Save settings to persistent storage
-static void save_settings(){
-    persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
-}
-
 static void notify_application(){
     // Begin dictionary
     DictionaryIterator *iter;
@@ -84,6 +49,12 @@ static void notify_application(){
 
     // Send the message!
     app_message_outbox_send();
+}
+
+// Save settings to persistent storage
+static void save_settings(bool updateForecast){
+    persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
+    if(updateForecast) notify_application();
 }
 
 static char **parse_data(char *data){
@@ -114,12 +85,14 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     Tuple *fav_hour_tuple = dict_find(iterator, MESSAGE_KEY_FavouriteHour);
 
     if (fav_hour_tuple){
+        bool updateForecast = false;
 		// Update favourite hour
 		int new_favhour = fav_hour_tuple->value->int32;
         APP_LOG(APP_LOG_LEVEL_INFO, "Hour: %d -> %d", settings.FavouriteHour, new_favhour);
 		if (new_favhour != settings.FavouriteHour)
 		{
 			settings.FavouriteHour = new_favhour;	
+            updateForecast = true;
 		}
 
         // Update color
@@ -138,9 +111,10 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 		if (new_spot != settings.Spot)
 		{
 			settings.Spot  = new_spot;	
+            updateForecast = true;
 		}
 
-        save_settings();
+        save_settings(updateForecast);
     }
     else{
         // Read forecast
@@ -253,7 +227,8 @@ static void update_time(){
     strftime(s_buffer, sizeof(s_buffer), clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
 
     // Display this time on the TextLayer
-    text_layer_set_text(s_time_layer, s_buffer);
+    //text_layer_set_text(s_time_layer, s_buffer);
+    text_layer_set_text(s_time_layer, "00:00");
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
@@ -321,12 +296,12 @@ static void wave_update_proc(Layer *layer, GContext *ctx){
 }
 
 static void wind_update_proc(Layer *layer, GContext *ctx){
-    graphics_draw_bitmap_in_rect(ctx, s_wind_bitmap, GRect(0, 6, 20, 14));
+    graphics_draw_bitmap_in_rect(ctx, s_wind_bitmap, GRect(-4, 6, 20, 14));
 }
 
 static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
     // First Forecast Layer
-    s_forecast_first_layer = layer_create(GRect(MARGIN, 35, bounds.size.w - 2 * MARGIN, 72));
+    s_forecast_first_layer = layer_create(GRect(0, 35, bounds.size.w, 72));
 
     // Create first Horizontal ruler
     s_ruler_first_layer = layer_create(GRect(0, 0, bounds.size.w, 5));
@@ -334,17 +309,17 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
     layer_add_child(s_forecast_first_layer, s_ruler_first_layer);
 
     //Create first forecast canvas
-    s_rating_first_canvas = layer_create(GRect(-1, 5, bounds.size.w-5, 20));
+    s_rating_first_canvas = layer_create(GRect(-1 + MARGIN, 5, bounds.size.w - 5, 20));
     layer_add_child(s_forecast_first_layer, s_rating_first_canvas);
     layer_set_update_proc(s_rating_first_canvas, rating_first_update_proc);
 
     // First wave canvas
-    s_wave_canvas = layer_create(GRect(-4, 24, 20, 20));
+    s_wave_canvas = layer_create(GRect(0, 24, 20, 20));
     layer_add_child(s_forecast_first_layer, s_wave_canvas);
     layer_set_update_proc(s_wave_canvas, wave_update_proc);
 
     // First swell layer
-    s_swell_first_layer = text_layer_create(GRect(23, 23, bounds.size.w-23, 21)); 
+    s_swell_first_layer = text_layer_create(GRect(23 + MARGIN, 23, bounds.size.w - 23, 21)); 
 
     // Get Swell from forecast
     static char swell_period_buffer_first[8];
@@ -361,12 +336,12 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
     text_layer_set_text(s_swell_first_layer, swell_buffer_first);
 
     // First wind canvas
-    s_wind_canvas = layer_create(GRect(-4, 43, 20, 20));
+    s_wind_canvas = layer_create(GRect(MARGIN, 43, 20 - MARGIN, 20));
     layer_add_child(s_forecast_first_layer, s_wind_canvas);
     layer_set_update_proc(s_wind_canvas, wind_update_proc);
 
     // First wind layer
-    s_wind_first_layer = text_layer_create(GRect(23, 42, bounds.size.w-23, 21));
+    s_wind_first_layer = text_layer_create(GRect(23 + MARGIN, 42, bounds.size.w - 23, 21));
 
     // Get wind from forecast
     static char wind_speed_buffer_first[8];
@@ -390,7 +365,7 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
 
 static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
     // Second Forecast Layer
-    s_forecast_second_layer = layer_create(GRect(MARGIN, 100, bounds.size.w - 2 * MARGIN, 72));
+    s_forecast_second_layer = layer_create(GRect(0, 100, bounds.size.w, 72));
 
     // Create second Horizontal ruler
     s_ruler_second_layer = layer_create(GRect(0, 0, bounds.size.w, 5));
@@ -398,17 +373,17 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
     layer_add_child(s_forecast_second_layer, s_ruler_second_layer);
 
     //Create first forecast canvas
-    s_rating_second_canvas = layer_create(GRect(-1, 5, bounds.size.w-5, 20));
+    s_rating_second_canvas = layer_create(GRect(-1 + MARGIN, 5, bounds.size.w - 5, 20));
     layer_add_child(s_forecast_second_layer, s_rating_second_canvas);
     layer_set_update_proc(s_rating_second_canvas, rating_second_update_proc);
 
     // Second wave canvas
-    s_wave_canvas = layer_create(GRect(-4, 24, 20, 20));
+    s_wave_canvas = layer_create(GRect(0, 24, 20, 20));
     layer_add_child(s_forecast_second_layer, s_wave_canvas);
     layer_set_update_proc(s_wave_canvas, wave_update_proc);
 
     // Second swell layer
-    s_swell_second_layer = text_layer_create(GRect(23, 23, bounds.size.w-23, 21));
+    s_swell_second_layer = text_layer_create(GRect(23 + MARGIN, 23, bounds.size.w-23, 21));
 
     // Get Swell from forecast
     static char swell_period_buffer_second[8];
@@ -425,12 +400,12 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
     text_layer_set_text(s_swell_second_layer, swell_buffer_second);
 
     // Second wind canvas
-    s_wind_canvas = layer_create(GRect(-4, 43, 20, 20));
+    s_wind_canvas = layer_create(GRect(MARGIN, 43, 20 - MARGIN, 20));
     layer_add_child(s_forecast_second_layer, s_wind_canvas);
     layer_set_update_proc(s_wind_canvas, wind_update_proc);
 
     // second wind layer
-    s_wind_second_layer = text_layer_create(GRect(23, 42, bounds.size.w-23, 21));
+    s_wind_second_layer = text_layer_create(GRect(23 + MARGIN, 42, bounds.size.w-23, 21));
 
     // Get wind from forecast
     static char wind_speed_buffer_second[8];
@@ -452,14 +427,10 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
     layer_add_child(window_layer, s_forecast_second_layer);
 }
 
-static void main_window_load(Window *window){
-    // Get information about the Window
-    Layer *window_layer = window_get_root_layer(window);
-    GRect bounds = layer_get_bounds(window_layer);
-
+static void layer_add_time_text_layer(Layer *window_layer, GRect bounds){
     // Create Time textlayer
     s_time_layer = text_layer_create(
-	GRect(MARGIN, -12 + MARGIN, bounds.size.w - 2 * MARGIN, 42));
+	GRect(MARGIN/2, -12 + MARGIN, bounds.size.w - 6 * MARGIN, 42));
 
     text_layer_set_background_color(s_time_layer, GColorClear);
     text_layer_set_text_color(s_time_layer, GColorWhite);
@@ -470,11 +441,56 @@ static void main_window_load(Window *window){
     s_time_font = fonts_get_system_font(FONT_KEY_BITHAM_42_MEDIUM_NUMBERS);
     text_layer_set_font(s_time_layer, s_time_font);
 
-    // Create Forecast font
-    s_forecast_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
-
     // Add it as a child layer to the Window's root layer
     layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
+}
+
+static void battery_update_proc(Layer *layer, GContext *ctx) {
+    GRect bounds = layer_get_bounds(layer);
+
+    // Find the width of the bar (total width = 114px)
+    int height = (s_battery_level * bounds.size.h) / 100;
+
+    // Draw the background
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+
+    // Draw the bar
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_rect(ctx, GRect(0, bounds.size.h - height, bounds.size.w, height), 0, GCornerNone);
+}
+
+static void layer_add_battery_layer(Layer *window_layer, GRect bounds){
+    // Create side statusbar layer
+    s_battery_layer = layer_create(
+        GRect(bounds.size.w - 5 * MARGIN - MARGIN/2, 
+              MARGIN, 
+              bounds.size.w - (bounds.size.w - 5 * MARGIN - MARGIN/2), 
+              30));
+
+    layer_set_update_proc(s_battery_layer, battery_update_proc);
+    
+    layer_add_child(window_layer, s_battery_layer);
+}
+
+static void battery_callback(BatteryChargeState state) {
+    // Record the new battery level
+    s_battery_level = state.charge_percent;
+    // Update meter
+    layer_mark_dirty(s_battery_layer);
+}
+
+static void main_window_load(Window *window){
+    // Get information about the Window
+    Layer *window_layer = window_get_root_layer(window);
+    GRect bounds = layer_get_bounds(window_layer);
+
+    layer_add_time_text_layer(window_layer, bounds);
+
+    layer_add_battery_layer(window_layer, bounds);
+
+    // Create Forecast font
+    s_forecast_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
 
     // Add forecast layers
     layer_add_first_forecast(window_layer, bounds);
@@ -482,30 +498,26 @@ static void main_window_load(Window *window){
 }
 
 static void main_window_unload(Window *window){
-    // Destroy TextLayers
-    text_layer_destroy(s_time_layer);
-    text_layer_destroy(s_swell_first_layer);
-    text_layer_destroy(s_wind_first_layer);
-    text_layer_destroy(s_swell_second_layer);
-    text_layer_destroy(s_wind_second_layer);
-
-    // Destroy rulers
+    // Destroy Layers
     layer_destroy(s_ruler_first_layer);
-    layer_destroy(s_ruler_second_layer);
-
-    // Destroy bitmaps
-    gbitmap_destroy(s_star_empty_bitmap);
-    gbitmap_destroy(s_star_full_bitmap);
-    gbitmap_destroy(s_wave_bitmap);
-    gbitmap_destroy(s_wind_bitmap);
-
-    // Destroy forecast layers
+    layer_destroy(s_ruler_second_layer);   
     layer_destroy(s_rating_first_canvas);
     layer_destroy(s_rating_second_canvas);
     layer_destroy(s_forecast_first_layer);
     layer_destroy(s_forecast_second_layer);
     layer_destroy(s_wave_canvas);
     layer_destroy(s_wind_canvas);
+    text_layer_destroy(s_time_layer);
+    text_layer_destroy(s_swell_first_layer);
+    text_layer_destroy(s_wind_first_layer);
+    text_layer_destroy(s_swell_second_layer);
+    text_layer_destroy(s_wind_second_layer);
+    layer_destroy(s_battery_layer);
+    // Destroy bitmaps
+    gbitmap_destroy(s_star_empty_bitmap);
+    gbitmap_destroy(s_star_full_bitmap);
+    gbitmap_destroy(s_wave_bitmap);
+    gbitmap_destroy(s_wind_bitmap);
 }
 
 static void init(){
@@ -535,8 +547,14 @@ static void init(){
     // Make sure the time is displayed from the start
     update_time();
 
+    // Ensure battery level is displayed from the start
+    battery_callback(battery_state_service_peek());
+
     // Register with TickTimerService
     tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+
+    // Register for battery level updates
+    battery_state_service_subscribe(battery_callback);
 
     // Register message callbacks
     app_message_register_inbox_received(inbox_received_callback);

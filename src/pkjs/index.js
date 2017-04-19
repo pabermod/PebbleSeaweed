@@ -24,16 +24,15 @@ function SendMessageToPebble(dict, messageType){
   });
 }
 
-var seaWeedAPIKey = 'apiKey';
+var seaWeedAPIKey = '';
 
-var favHour = 12;
-var spot = 177;
-var color = 0;
-
-function sendSettings(){
-  var settings = {};
+function GetSettings(){
+  var favHour = 12;
+  var spot = 177;
+  var color = 0;  
   try {    
-    settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
+    console.log("settings: " + localStorage.getItem('clay-settings'));
+    var settings = JSON.parse(localStorage.getItem('clay-settings')) || {};
     if (typeof settings.FavouriteHour != 'undefined'){  
       favHour = parseInt(settings.FavouriteHour);
     } 
@@ -44,7 +43,7 @@ function sendSettings(){
       spot = parseInt(settings.Spot); 
     }
   } catch (e) {  
-    console.log('Exception Getting Settings');
+    console.log('Exception Getting settings');
   }
 
   var dictionary = {};
@@ -52,13 +51,19 @@ function sendSettings(){
   dictionary[keys.Color] = color;
   dictionary[keys.Spot] = spot;
 
-  SendMessageToPebble(dictionary, "sendSettings");
+  return dictionary;
 }
 
-function sendResponse(spotId){
+function SendSettings(){
+  var dictionary = GetSettings();
+  SendMessageToPebble(dictionary, "SendSettings");
+}
+
+function SendForecast(){
+  var dict = GetSettings();
   // Construct URL
   var url = 'http://magicseaweed.com/api/' + seaWeedAPIKey + 
-      '/forecast/?spot_id=' + spotId + '&units=eu'+
+      '/forecast/?spot_id=' + dict[keys.Spot] + '&units=eu'+
       '&fields=timestamp,fadedRating,solidRating,'+
       'swell.components.combined.*,'+
       'wind.speed,wind.direction';
@@ -76,7 +81,7 @@ function sendResponse(spotId){
       // Get only the first 2 forecasts
       for(var k in json){
         var date = new Date(json[k].timestamp*1000);     
-        if(date.getHours() == favHour - timezoneOffsetHours){
+        if(date.getHours() == dict[keys.FavouriteHour] - timezoneOffsetHours){
           // Swell Keys
           dictionary[keys.FadedRating + num] = json[k].fadedRating;
           dictionary[keys.SolidRating + num] = json[k].solidRating;
@@ -107,12 +112,12 @@ Pebble.addEventListener('ready',
   function (e) {
     console.log('PebbleKit JS ready!');
     // Get the initial forecast
-    sendResponse(spot);
-  });
+    SendForecast();
+});
 
 // Get AppMessage events
 Pebble.addEventListener('appmessage', function(e) {
-  sendResponse(spot);
+  SendForecast();
 });
 
 Pebble.addEventListener('showConfiguration', function(e) {
@@ -123,12 +128,5 @@ Pebble.addEventListener('webviewclosed', function(e) {
   if (e && !e.response) {
     return;
   }
-  // Get the keys and values from each config item
-  var dict = clay.getSettings(e.response);
-
-  dict[keys.FavouriteHour] = parseInt(dict[keys.FavouriteHour]);
-  dict[keys.Color] = parseInt(dict[keys.Color]);
-  dict[keys.Spot] = parseInt(dict[keys.Spot])
-
-  SendMessageToPebble(dict, "clay settings");
+  SendSettings();
 });
