@@ -1,6 +1,7 @@
 #include "main.h"
 // Initialize the default forecast
-static void default_forecast(){
+static void default_forecast()
+{
     forecast[0].FadedRating = forecast[1].FadedRating = 0;
     forecast[0].SolidRating = forecast[1].SolidRating = 0;
     forecast[0].SwellPeriod = forecast[1].SwellPeriod = 0;
@@ -12,14 +13,16 @@ static void default_forecast(){
 }
 
 // Initialize the default settings
-static void default_settings(){
-    settings.FavouriteHour = 12;    
+static void default_settings()
+{
+    settings.FavouriteHour = 12;
     settings.Color = 0;
     settings.Spot = 177;
 }
 
 // Read forecast from persistent storage
-static void load_forecast(){
+static void load_forecast()
+{
     // Load the default forecast
     default_forecast();
     // Read forecast from persistent storage, if they exist
@@ -27,19 +30,22 @@ static void load_forecast(){
 }
 
 // Save forecast to persistent storage
-static void save_forecast(){
+static void save_forecast()
+{
     persist_write_data(FORECAST_KEY, &forecast, sizeof(forecast));
 }
 
 // Read settings from persistent storage
-static void load_settings(){
+static void load_settings()
+{
     // Load the default settings
     default_settings();
     // Read settings from persistent storage, if they exist
     persist_read_data(SETTINGS_KEY, &settings, sizeof(settings));
 }
 
-static void notify_application(){
+static void notify_application()
+{
     // Begin dictionary
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
@@ -52,90 +58,97 @@ static void notify_application(){
 }
 
 // Save settings to persistent storage
-static void save_settings(){
+static void save_settings()
+{
     persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
     notify_application();
 }
 
-static char **parse_data(char *data){
+static char **parse_data(char *data)
+{
     ProcessingState *state = data_processor_create(data, '|');
     uint8_t num_strings = data_processor_count(state);
     char **strings = malloc(sizeof(char *) * num_strings);
     for (uint8_t n = 0; n < num_strings; n += 1)
     {
-	    strings[n] = data_processor_get_string(state);
+        strings[n] = data_processor_get_string(state);
     }
     return strings;
 }
 
-void copy_string(char d[], char s[]){
-   int c = 0;
- 
-   while (s[c] != '\0') {
-      d[c] = s[c];
-      c++;
-   }
-   d[c] = '\0';
+void copy_string(char d[], char s[])
+{
+    int c = 0;
+
+    while (s[c] != '\0')
+    {
+        d[c] = s[c];
+        c++;
+    }
+    d[c] = '\0';
 }
 
-static void inbox_received_callback(DictionaryIterator *iterator, void *context){
+static void inbox_received_callback(DictionaryIterator *iterator, void *context)
+{
     APP_LOG(APP_LOG_LEVEL_INFO, "Message received");
 
     // Read settings
     Tuple *fav_hour_tuple = dict_find(iterator, MESSAGE_KEY_FavouriteHour);
 
-    if (fav_hour_tuple){
-		// Update favourite hour
-		int new_favhour = fav_hour_tuple->value->int32;
+    if (fav_hour_tuple)
+    {
+        // Update favourite hour
+        int new_favhour = fav_hour_tuple->value->int32;
         APP_LOG(APP_LOG_LEVEL_INFO, "Hour: %d -> %d", settings.FavouriteHour, new_favhour);
-		if (new_favhour != settings.FavouriteHour)
-		{
-			settings.FavouriteHour = new_favhour;	
-		}
+        if (new_favhour != settings.FavouriteHour)
+        {
+            settings.FavouriteHour = new_favhour;
+        }
 
         // Update color
         Tuple *color_tuple = dict_find(iterator, MESSAGE_KEY_Color);
-		int new_color = color_tuple->value->int32;
+        int new_color = color_tuple->value->int32;
         APP_LOG(APP_LOG_LEVEL_INFO, "Color: %d -> %d", settings.Color, new_color);
-		if (new_color != settings.Color)
-		{
-			settings.Color  = new_color;	
-		}
+        if (new_color != settings.Color)
+        {
+            settings.Color = new_color;
+        }
 
         // Update spot
         Tuple *spot_tuple = dict_find(iterator, MESSAGE_KEY_Spot);
-		int new_spot = spot_tuple->value->int32;
+        int new_spot = spot_tuple->value->int32;
         APP_LOG(APP_LOG_LEVEL_INFO, "Spot: %d -> %d", settings.Spot, new_spot);
-		if (new_spot != settings.Spot)
-		{
-			settings.Spot  = new_spot;	
-		}
+        if (new_spot != settings.Spot)
+        {
+            settings.Spot = new_spot;
+        }
 
         save_settings();
     }
-    else{
+    else
+    {
         // Read forecast
         Tuple *faded_rating_one = dict_find(iterator, MESSAGE_KEY_FadedRating);
-        Tuple *faded_rating_two = dict_find(iterator, MESSAGE_KEY_FadedRating+1);
+        Tuple *faded_rating_two = dict_find(iterator, MESSAGE_KEY_FadedRating + 1);
         Tuple *solid_rating_one = dict_find(iterator, MESSAGE_KEY_SolidRating);
-        Tuple *solid_rating_two = dict_find(iterator, MESSAGE_KEY_SolidRating+1);
+        Tuple *solid_rating_two = dict_find(iterator, MESSAGE_KEY_SolidRating + 1);
         Tuple *swell_period_one = dict_find(iterator, MESSAGE_KEY_SwellPeriod);
-        Tuple *swell_period_two = dict_find(iterator, MESSAGE_KEY_SwellPeriod+1);
+        Tuple *swell_period_two = dict_find(iterator, MESSAGE_KEY_SwellPeriod + 1);
         Tuple *swell_heights_tuple = dict_find(iterator, MESSAGE_KEY_SwellHeight);
         Tuple *swell_direction_one = dict_find(iterator, MESSAGE_KEY_SwellDirection);
-        Tuple *swell_direction_two = dict_find(iterator, MESSAGE_KEY_SwellDirection+1);
+        Tuple *swell_direction_two = dict_find(iterator, MESSAGE_KEY_SwellDirection + 1);
         Tuple *wind_speed_one = dict_find(iterator, MESSAGE_KEY_WindSpeed);
-        Tuple *wind_speed_two = dict_find(iterator, MESSAGE_KEY_WindSpeed+1);
+        Tuple *wind_speed_two = dict_find(iterator, MESSAGE_KEY_WindSpeed + 1);
         Tuple *wind_direction_one = dict_find(iterator, MESSAGE_KEY_WindDirection);
-        Tuple *wind_direction_two = dict_find(iterator, MESSAGE_KEY_WindDirection+1);
+        Tuple *wind_direction_two = dict_find(iterator, MESSAGE_KEY_WindDirection + 1);
 
         // If all data is available, use it
-        if (faded_rating_one && faded_rating_two && solid_rating_one && solid_rating_two 
-            && swell_period_one && swell_period_two && swell_heights_tuple 
-            && swell_direction_one && swell_direction_two && wind_speed_one 
-            && wind_speed_two && wind_direction_one && wind_direction_two)
+        if (faded_rating_one && faded_rating_two && solid_rating_one && 
+        solid_rating_two && swell_period_one && swell_period_two && 
+        swell_heights_tuple && swell_direction_one && swell_direction_two && 
+        wind_speed_one && wind_speed_two && wind_direction_one && wind_direction_two)
         {
-            APP_LOG(APP_LOG_LEVEL_INFO, "forecast received"); 
+            APP_LOG(APP_LOG_LEVEL_INFO, "forecast received");
             // Update ratings
             forecast[0].FadedRating = faded_rating_one->value->int32;
             forecast[1].FadedRating = faded_rating_two->value->int32;
@@ -145,52 +158,52 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             // Update Swell
             static char swell_period_buffer_first[8];
             static char swell_period_buffer_second[8];
-            
+
             forecast[0].SwellPeriod = swell_period_one->value->int32;
-                snprintf(swell_period_buffer_first, sizeof(swell_period_buffer_first),
-                    "%ds", forecast[0].SwellPeriod);
+            snprintf(swell_period_buffer_first, sizeof(swell_period_buffer_first),
+                     "%ds", forecast[0].SwellPeriod);
 
             forecast[1].SwellPeriod = swell_period_two->value->int32;
             snprintf(swell_period_buffer_second, sizeof(swell_period_buffer_second),
-                "%ds", forecast[1].SwellPeriod);
+                     "%ds", forecast[1].SwellPeriod);
 
             // Update height
             char **strings = parse_data(swell_heights_tuple->value->cstring);
 
             // Write height data to buffer
             snprintf(forecast[0].SwellHeight, sizeof(forecast[0].SwellHeight),
-                "%sm", strings[0]);
+                     "%sm", strings[0]);
             snprintf(forecast[1].SwellHeight, sizeof(forecast[1].SwellHeight),
-                "%sm", strings[1]);
+                     "%sm", strings[1]);
 
             forecast[0].SwellDirection = swell_direction_one->value->int32;
             forecast[1].SwellDirection = swell_direction_two->value->int32;
 
             static char swell_buffer_first[16];
             static char swell_buffer_second[16];
-            
+
             // Assemble full first swell and display
             snprintf(swell_buffer_first, sizeof(swell_buffer_first), "%s %s",
-                forecast[0].SwellHeight, swell_period_buffer_first);
+                     forecast[0].SwellHeight, swell_period_buffer_first);
             text_layer_set_text(s_swell_first_layer, swell_buffer_first);
 
             // Assemble full second swell and display
             snprintf(swell_buffer_second, sizeof(swell_buffer_first), "%s %s",
-                forecast[1].SwellHeight, swell_period_buffer_second);
+                     forecast[1].SwellHeight, swell_period_buffer_second);
             text_layer_set_text(s_swell_second_layer, swell_buffer_second);
-            
+
             // Update Wind
             static char wind_speed_buffer_first[8];
             static char wind_speed_buffer_second[8];
-            
+
             forecast[0].WindSpeed = wind_speed_one->value->int32;
             snprintf(wind_speed_buffer_first, sizeof(wind_speed_buffer_first),
-                "%dkmh", forecast[0].WindSpeed);
+                     "%dkmh", forecast[0].WindSpeed);
             text_layer_set_text(s_wind_first_layer, wind_speed_buffer_first);
 
             forecast[1].WindSpeed = wind_speed_two->value->int32;
             snprintf(wind_speed_buffer_second, sizeof(wind_speed_buffer_second),
-                "%dkmh", forecast[1].WindSpeed);
+                     "%dkmh", forecast[1].WindSpeed);
             text_layer_set_text(s_wind_second_layer, wind_speed_buffer_second);
 
             forecast[0].WindDirection = wind_direction_one->value->int32;
@@ -202,19 +215,23 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     }
 }
 
-static void inbox_dropped_callback(AppMessageResult reason, void *context){
+static void inbox_dropped_callback(AppMessageResult reason, void *context)
+{
     APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped. Reason: %d", (int)reason);
 }
 
-static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context){
+static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context)
+{
     APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
 }
 
-static void outbox_sent_callback(DictionaryIterator *iterator, void *context){
+static void outbox_sent_callback(DictionaryIterator *iterator, void *context)
+{
     APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
 }
 
-static void update_time(){
+static void update_time()
+{
     // Get a tm structure
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
@@ -228,17 +245,19 @@ static void update_time(){
     //text_layer_set_text(s_time_layer, "00:00");
 }
 
-static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed)
+{
     update_time();
 
     // Get weather update every 60 minutes
     if (tick_time->tm_min % 60 == 0)
     {
-	    notify_application();
+        notify_application();
     }
 }
 
-static void horizontal_ruler_update_proc(Layer *layer, GContext *ctx){
+static void horizontal_ruler_update_proc(Layer *layer, GContext *ctx)
+{
     const GRect bounds = layer_get_bounds(layer);
 
     // y relative to layer's bounds to support clipping after some vertical scrolling
@@ -248,7 +267,8 @@ static void horizontal_ruler_update_proc(Layer *layer, GContext *ctx){
     graphics_draw_line(ctx, GPoint(0, yy), GPoint(bounds.size.w, yy));
 }
 
-static void rating_first_update_proc(Layer *layer, GContext *ctx){
+static void rating_first_update_proc(Layer *layer, GContext *ctx)
+{
     // First of all set black background
     graphics_context_set_fill_color(ctx, GColorBlack);
     graphics_context_set_stroke_color(ctx, GColorBlack);
@@ -257,18 +277,19 @@ static void rating_first_update_proc(Layer *layer, GContext *ctx){
     int i = 0;
     for (i = 0; i < forecast[0].SolidRating; ++i)
     {
-	    graphics_draw_bitmap_in_rect(ctx, s_star_full_bitmap, 
-            GRect(width * i, 0, width, width - 1));
+        graphics_draw_bitmap_in_rect(ctx, s_star_full_bitmap,
+                                     GRect(width * i, 0, width, width - 1));
     }
 
     for (int j = 0; j < forecast[0].FadedRating; ++j)
     {
-	    graphics_draw_bitmap_in_rect(ctx, s_star_empty_bitmap, 
-            GRect(width * (i + j), 0, width, width - 1));
+        graphics_draw_bitmap_in_rect(ctx, s_star_empty_bitmap,
+                                     GRect(width * (i + j), 0, width, width - 1));
     }
 }
 
-static void rating_second_update_proc(Layer *layer, GContext *ctx){
+static void rating_second_update_proc(Layer *layer, GContext *ctx)
+{
     // First of all set black background
     graphics_context_set_fill_color(ctx, GColorBlack);
     graphics_context_set_stroke_color(ctx, GColorBlack);
@@ -277,26 +298,29 @@ static void rating_second_update_proc(Layer *layer, GContext *ctx){
     int i = 0;
     for (i = 0; i < forecast[1].SolidRating; ++i)
     {
-	    graphics_draw_bitmap_in_rect(ctx, s_star_full_bitmap, 
-            GRect(width * i, 0, width, width - 1));
+        graphics_draw_bitmap_in_rect(ctx, s_star_full_bitmap,
+                                     GRect(width * i, 0, width, width - 1));
     }
 
     for (int j = 0; j < forecast[1].FadedRating; ++j)
     {
-	    graphics_draw_bitmap_in_rect(ctx, s_star_empty_bitmap, 
-            GRect(width * (i + j), 0, width, width - 1));
+        graphics_draw_bitmap_in_rect(ctx, s_star_empty_bitmap,
+                                     GRect(width * (i + j), 0, width, width - 1));
     }
 }
 
-static void wave_update_proc(Layer *layer, GContext *ctx){
+static void wave_update_proc(Layer *layer, GContext *ctx)
+{
     graphics_draw_bitmap_in_rect(ctx, s_wave_bitmap, GRect(0, 6, 20, 14));
 }
 
-static void wind_update_proc(Layer *layer, GContext *ctx){
+static void wind_update_proc(Layer *layer, GContext *ctx)
+{
     graphics_draw_bitmap_in_rect(ctx, s_wind_bitmap, GRect(-4, 6, 20, 14));
 }
 
-static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
+static void layer_add_first_forecast(Layer *window_layer, GRect bounds)
+{
     // First Forecast Layer
     s_forecast_first_layer = layer_create(GRect(0, 35, bounds.size.w, 72));
 
@@ -316,15 +340,15 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
     layer_set_update_proc(s_wave_canvas, wave_update_proc);
 
     // First swell layer
-    s_swell_first_layer = text_layer_create(GRect(23 + MARGIN, 23, bounds.size.w - 23, 21)); 
+    s_swell_first_layer = text_layer_create(GRect(23 + MARGIN, 23, bounds.size.w - 23, 21));
 
     // Get Swell from forecast
     static char swell_period_buffer_first[8];
     snprintf(swell_period_buffer_first, sizeof(swell_period_buffer_first),
-        "%ds", forecast[0].SwellPeriod);
+             "%ds", forecast[0].SwellPeriod);
     static char swell_buffer_first[16];
     snprintf(swell_buffer_first, sizeof(swell_buffer_first), "%s %s",
-        forecast[0].SwellHeight, swell_period_buffer_first);
+             forecast[0].SwellHeight, swell_period_buffer_first);
 
     // Style the text and display
     text_layer_set_background_color(s_swell_first_layer, GColorClear);
@@ -343,7 +367,7 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
     // Get wind from forecast
     static char wind_speed_buffer_first[8];
     snprintf(wind_speed_buffer_first, sizeof(wind_speed_buffer_first),
-        "%dkmh", forecast[0].WindSpeed);
+             "%dkmh", forecast[0].WindSpeed);
 
     text_layer_set_background_color(s_wind_first_layer, GColorClear);
     text_layer_set_text_color(s_wind_first_layer, GColorWhite);
@@ -360,7 +384,8 @@ static void layer_add_first_forecast(Layer *window_layer, GRect bounds){
     layer_add_child(window_layer, s_forecast_first_layer);
 }
 
-static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
+static void layer_add_second_forecast(Layer *window_layer, GRect bounds)
+{
     // Second Forecast Layer
     s_forecast_second_layer = layer_create(GRect(0, 100, bounds.size.w, 72));
 
@@ -380,15 +405,15 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
     layer_set_update_proc(s_wave_canvas, wave_update_proc);
 
     // Second swell layer
-    s_swell_second_layer = text_layer_create(GRect(23 + MARGIN, 23, bounds.size.w-23, 21));
+    s_swell_second_layer = text_layer_create(GRect(23 + MARGIN, 23, bounds.size.w - 23, 21));
 
     // Get Swell from forecast
     static char swell_period_buffer_second[8];
     snprintf(swell_period_buffer_second, sizeof(swell_period_buffer_second),
-        "%ds", forecast[1].SwellPeriod);
+             "%ds", forecast[1].SwellPeriod);
     static char swell_buffer_second[16];
     snprintf(swell_buffer_second, sizeof(swell_buffer_second), "%s %s",
-        forecast[1].SwellHeight, swell_period_buffer_second);
+             forecast[1].SwellHeight, swell_period_buffer_second);
 
     // Style the text
     text_layer_set_background_color(s_swell_second_layer, GColorClear);
@@ -402,12 +427,12 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
     layer_set_update_proc(s_wind_canvas, wind_update_proc);
 
     // second wind layer
-    s_wind_second_layer = text_layer_create(GRect(23 + MARGIN, 42, bounds.size.w-23, 21));
+    s_wind_second_layer = text_layer_create(GRect(23 + MARGIN, 42, bounds.size.w - 23, 21));
 
     // Get wind from forecast
     static char wind_speed_buffer_second[8];
     snprintf(wind_speed_buffer_second, sizeof(wind_speed_buffer_second),
-        "%dkmh", forecast[1].WindSpeed);
+             "%dkmh", forecast[1].WindSpeed);
 
     text_layer_set_background_color(s_wind_second_layer, GColorClear);
     text_layer_set_text_color(s_wind_second_layer, GColorWhite);
@@ -424,10 +449,11 @@ static void layer_add_second_forecast(Layer *window_layer, GRect bounds){
     layer_add_child(window_layer, s_forecast_second_layer);
 }
 
-static void layer_add_time_text_layer(Layer *window_layer, GRect bounds){
+static void layer_add_time_text_layer(Layer *window_layer, GRect bounds)
+{
     // Create Time textlayer
     s_time_layer = text_layer_create(
-	GRect(MARGIN/2, -12 + MARGIN, bounds.size.w - 6 * MARGIN, 42));
+        GRect(MARGIN / 2, -12 + MARGIN, bounds.size.w - 6 * MARGIN, 42));
 
     text_layer_set_background_color(s_time_layer, GColorClear);
     text_layer_set_text_color(s_time_layer, GColorWhite);
@@ -442,9 +468,10 @@ static void layer_add_time_text_layer(Layer *window_layer, GRect bounds){
     layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
 }
 
-static void battery_update_proc(Layer *layer, GContext *ctx) {
+static void battery_update_proc(Layer *layer, GContext *ctx)
+{
     GRect bounds = layer_get_bounds(layer);
-     
+
     graphics_context_set_stroke_color(ctx, GColorWhite);
     graphics_draw_rect(ctx, GRect(0, 0, bounds.size.w, bounds.size.h));
 
@@ -460,25 +487,28 @@ static void battery_update_proc(Layer *layer, GContext *ctx) {
     graphics_fill_rect(ctx, GRect(2, bounds.size.h - 2 - height, bounds.size.w - 4, height), 0, GCornerNone);
 }
 
-static void layer_add_battery_layer(Layer *window_layer, GRect bounds){
+static void layer_add_battery_layer(Layer *window_layer, GRect bounds)
+{
     // Create side statusbar layer
     s_battery_layer = layer_create(
-        GRect(bounds.size.w - 5 * MARGIN - MARGIN/2, 
+        GRect(bounds.size.w - 5 * MARGIN - MARGIN / 2,
               MARGIN, 18, 30));
 
     layer_set_update_proc(s_battery_layer, battery_update_proc);
-    
+
     layer_add_child(window_layer, s_battery_layer);
 }
 
-static void battery_callback(BatteryChargeState state) {
+static void battery_callback(BatteryChargeState state)
+{
     // Record the new battery level
     s_battery_level = state.charge_percent;
     // Update meter
     layer_mark_dirty(s_battery_layer);
 }
 
-static void main_window_load(Window *window){
+static void main_window_load(Window *window)
+{
     // Get information about the Window
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
@@ -495,10 +525,11 @@ static void main_window_load(Window *window){
     layer_add_second_forecast(window_layer, bounds);
 }
 
-static void main_window_unload(Window *window){
+static void main_window_unload(Window *window)
+{
     // Destroy Layers
     layer_destroy(s_ruler_first_layer);
-    layer_destroy(s_ruler_second_layer);   
+    layer_destroy(s_ruler_second_layer);
     layer_destroy(s_rating_first_canvas);
     layer_destroy(s_rating_second_canvas);
     layer_destroy(s_forecast_first_layer);
@@ -518,7 +549,8 @@ static void main_window_unload(Window *window){
     gbitmap_destroy(s_wind_bitmap);
 }
 
-static void init(){
+static void init()
+{
     load_forecast();
     load_settings();
 
@@ -530,8 +562,8 @@ static void init(){
 
     // Set handlers to manage the elements inside the Window
     window_set_window_handlers(s_main_window, (WindowHandlers){
-						  .load = main_window_load,
-						  .unload = main_window_unload});
+                                                  .load = main_window_load,
+                                                  .unload = main_window_unload});
 
     // Create GBitmaps
     s_star_empty_bitmap = gbitmap_create_with_resource(RESOURCE_ID_STAR_EMPTY_WHITE_20);
@@ -539,8 +571,8 @@ static void init(){
     s_wave_bitmap = gbitmap_create_with_resource(RESOURCE_ID_WAVE_WHITE_20);
     s_wind_bitmap = gbitmap_create_with_resource(RESOURCE_ID_WIND_WHITE_20);
 
-	// Show the Window on the watch, with animated=true
-	window_stack_push(s_main_window, true);
+    // Show the Window on the watch, with animated=true
+    window_stack_push(s_main_window, true);
 
     // Make sure the time is displayed from the start
     update_time();
@@ -566,12 +598,14 @@ static void init(){
     app_message_open(inbox_size, outbox_size);
 }
 
-static void deinit(){
+static void deinit()
+{
     // Destroy Window
     window_destroy(s_main_window);
 }
 
-int main(void){
+int main(void)
+{
     init();
     app_event_loop();
     deinit();
