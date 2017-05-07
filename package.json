@@ -32,28 +32,6 @@
     "resources": {
       "media": [
         {
-          "file": "images/bt-icon.png",
-          "name": "IMAGE_BT_ICON",
-          "targetPlatforms": null,
-          "type": "bitmap",
-          "memoryFormat": "Smallest",
-          "spaceOptimization": "memory"
-        },
-        {
-          "type": "bitmap",
-          "name": "STAR_FULL_BLACK_20",
-          "file": "images/star_full_black_20.png",
-          "memoryFormat": "Smallest",
-          "spaceOptimization": "memory"
-        },
-        {
-          "type": "bitmap",
-          "name": "STAR_EMPTY_BLACK_20",
-          "file": "images/star_empty_black_20.png",
-          "memoryFormat": "Smallest",
-          "spaceOptimization": "memory"
-        },
-        {
           "type": "bitmap",
           "name": "STAR_FULL_WHITE_20",
           "file": "images/star_full_white_20.png",
@@ -66,14 +44,7 @@
           "file": "images/star_empty_white_20.png",
           "memoryFormat": "Smallest",
           "spaceOptimization": "memory"
-        },
-        {
-          "type": "bitmap",
-          "name": "WAVE_BLACK_20",
-          "file": "images/wave_20_black.png",
-          "memoryFormat": "Smallest",
-          "spaceOptimization": "memory"
-        },
+        }
         {
           "type": "bitmap",
           "name": "WAVE_WHITE_20",
