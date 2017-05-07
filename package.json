@@ -44,7 +44,7 @@
           "file": "images/star_empty_white_20.png",
           "memoryFormat": "Smallest",
           "spaceOptimization": "memory"
-        }
+        },
         {
           "type": "bitmap",
           "name": "WAVE_WHITE_20",
